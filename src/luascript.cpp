@@ -9809,7 +9809,7 @@ int LuaScriptInterface::luaPlayerGetGroup(lua_State* L)
 	// player:getGroup()
 	Player* player = getUserdata<Player>(L, 1);
 	if (player) {
-		pushUserdata<Group>(L, player->getGroup());
+		pushSharedPtr(L, player->getGroup());
 		setMetatable(L, -1, "Group");
 	} else {
 		lua_pushnil(L);
@@ -9820,7 +9820,7 @@ int LuaScriptInterface::luaPlayerGetGroup(lua_State* L)
 int LuaScriptInterface::luaPlayerSetGroup(lua_State* L)
 {
 	// player:setGroup(group)
-	Group* group = getUserdata<Group>(L, 2);
+	const auto& group = getSharedPtr<Group>(L, 2);
 	if (!group) {
 		pushBoolean(L, false);
 		return 1;
@@ -11942,9 +11942,9 @@ int LuaScriptInterface::luaGroupCreate(lua_State* L)
 	// Group(id)
 	uint32_t id = getNumber<uint32_t>(L, 2);
 
-	Group* group = g_game.groups.getGroup(id);
+	auto group = Groups::getGroup(id);
 	if (group) {
-		pushUserdata<Group>(L, group);
+		pushSharedPtr(L, group);
 		setMetatable(L, -1, "Group");
 	} else {
 		lua_pushnil(L);
@@ -11955,7 +11955,7 @@ int LuaScriptInterface::luaGroupCreate(lua_State* L)
 int LuaScriptInterface::luaGroupGetId(lua_State* L)
 {
 	// group:getId()
-	Group* group = getUserdata<Group>(L, 1);
+	const auto& group = getSharedPtr<Group>(L, 1);
 	if (group) {
 		lua_pushnumber(L, group->id);
 	} else {
@@ -11967,7 +11967,7 @@ int LuaScriptInterface::luaGroupGetId(lua_State* L)
 int LuaScriptInterface::luaGroupGetName(lua_State* L)
 {
 	// group:getName()
-	Group* group = getUserdata<Group>(L, 1);
+	const auto& group = getSharedPtr<Group>(L, 1);
 	if (group) {
 		pushString(L, group->name);
 	} else {
@@ -11979,7 +11979,7 @@ int LuaScriptInterface::luaGroupGetName(lua_State* L)
 int LuaScriptInterface::luaGroupGetFlags(lua_State* L)
 {
 	// group:getFlags()
-	Group* group = getUserdata<Group>(L, 1);
+	const auto& group = getSharedPtr<Group>(L, 1);
 	if (group) {
 		lua_pushnumber(L, group->flags);
 	} else {
@@ -11991,7 +11991,7 @@ int LuaScriptInterface::luaGroupGetFlags(lua_State* L)
 int LuaScriptInterface::luaGroupGetAccess(lua_State* L)
 {
 	// group:getAccess()
-	Group* group = getUserdata<Group>(L, 1);
+	const auto& group = getSharedPtr<Group>(L, 1);
 	if (group) {
 		pushBoolean(L, group->access);
 	} else {
@@ -12003,7 +12003,7 @@ int LuaScriptInterface::luaGroupGetAccess(lua_State* L)
 int LuaScriptInterface::luaGroupGetMaxDepotItems(lua_State* L)
 {
 	// group:getMaxDepotItems()
-	Group* group = getUserdata<Group>(L, 1);
+	const auto& group = getSharedPtr<Group>(L, 1);
 	if (group) {
 		lua_pushnumber(L, group->maxDepotItems);
 	} else {
@@ -12015,7 +12015,7 @@ int LuaScriptInterface::luaGroupGetMaxDepotItems(lua_State* L)
 int LuaScriptInterface::luaGroupGetMaxVipEntries(lua_State* L)
 {
 	// group:getMaxVipEntries()
-	Group* group = getUserdata<Group>(L, 1);
+	const auto& group = getSharedPtr<Group>(L, 1);
 	if (group) {
 		lua_pushnumber(L, group->maxVipEntries);
 	} else {
@@ -12027,7 +12027,7 @@ int LuaScriptInterface::luaGroupGetMaxVipEntries(lua_State* L)
 int LuaScriptInterface::luaGroupHasFlag(lua_State* L)
 {
 	// group:hasFlag(flag)
-	Group* group = getUserdata<Group>(L, 1);
+	const auto& group = getSharedPtr<Group>(L, 1);
 	if (group) {
 		PlayerFlags flag = getNumber<PlayerFlags>(L, 2);
 		pushBoolean(L, (group->flags & flag) != 0);

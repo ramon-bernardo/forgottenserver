@@ -485,7 +485,6 @@ public:
 
 	bool reload(ReloadTypes_t reloadType);
 
-	Groups groups;
 	Map map;
 	Mounts mounts;
 

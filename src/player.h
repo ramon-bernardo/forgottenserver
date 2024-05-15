@@ -249,8 +249,8 @@ public:
 
 	void setStorageValue(uint32_t key, std::optional<int32_t> value, bool isSpawn = false) override;
 
-	void setGroup(Group* newGroup) { group = newGroup; }
-	Group* getGroup() const { return group; }
+	void setGroup(std::shared_ptr<Group> newGroup) { group = newGroup; }
+	std::shared_ptr<Group> getGroup() const { return group; }
 
 	void setInMarket(bool value) { inMarket = value; }
 	bool isInMarket() const { return inMarket; }
@@ -1202,7 +1202,7 @@ private:
 	BedItem* bedItem = nullptr;
 	Guild* guild = nullptr;
 	GuildRank_ptr guildRank = nullptr;
-	Group* group = nullptr;
+	std::shared_ptr<Group> group = nullptr;
 	Inbox* inbox;
 	Item* tradeItem = nullptr;
 	Item* inventory[CONST_SLOT_LAST + 1] = {};

@@ -8,6 +8,9 @@
 #include "pugicast.h"
 #include "tools.h"
 
+namespace {
+std::vector<Group> groups = {};
+
 const std::unordered_map<std::string, PlayerFlags> ParsePlayerFlagMap = {
     {"cannotusecombat", PlayerFlag_CannotUseCombat},
     {"cannotattackplayer", PlayerFlag_CannotAttackPlayer},
@@ -48,6 +51,7 @@ const std::unordered_map<std::string, PlayerFlags> ParsePlayerFlagMap = {
     {"isalwayspremium", PlayerFlag_IsAlwaysPremium},
     {"ignoreyellcheck", PlayerFlag_IgnoreYellCheck},
     {"ignoresendprivatecheck", PlayerFlag_IgnoreSendPrivateCheck}};
+} // namespace
 
 bool Groups::load()
 {
@@ -85,11 +89,11 @@ bool Groups::load()
 	return true;
 }
 
-Group* Groups::getGroup(uint16_t id)
+std::shared_ptr<Group> Groups::getGroup(uint16_t id)
 {
-	for (Group& group : groups) {
+	for (const auto& group : groups) {
 		if (group.id == id) {
-			return &group;
+			return std::make_shared<Group>(group);
 		}
 	}
 	return nullptr;

@@ -196,13 +196,15 @@ bool IOLoginData::preloadPlayer(Player* player)
 	}
 
 	player->setName(result->getString("name"));
-	Group* group = g_game.groups.getGroup(result->getNumber<uint16_t>("group_id"));
+
+	const auto& group = Groups::getGroup(result->getNumber<uint16_t>("group_id"));
 	if (!group) {
 		std::cout << "[Error - IOLoginData::preloadPlayer] " << player->name << " has Group ID "
 		          << result->getNumber<uint16_t>("group_id") << " which doesn't exist." << std::endl;
 		return false;
 	}
 	player->setGroup(group);
+
 	player->accountNumber = result->getNumber<uint32_t>("account_id");
 	player->accountType = static_cast<AccountType_t>(result->getNumber<uint16_t>("type"));
 	player->premiumEndsAt = result->getNumber<time_t>("premium_ends_at");
@@ -269,7 +271,7 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
 
 	player->premiumEndsAt = acc.premiumEndsAt;
 
-	Group* group = g_game.groups.getGroup(result->getNumber<uint16_t>("group_id"));
+	const auto& group = Groups::getGroup(result->getNumber<uint16_t>("group_id"));
 	if (!group) {
 		std::cout << "[Error - IOLoginData::loadPlayer] " << player->name << " has Group ID "
 		          << result->getNumber<uint16_t>("group_id") << " which doesn't exist" << std::endl;
@@ -1037,15 +1039,9 @@ bool IOLoginData::getGuidByNameEx(uint32_t& guid, bool& specialVip, std::string&
 
 	name = result->getString("name");
 	guid = result->getNumber<uint32_t>("id");
-	Group* group = g_game.groups.getGroup(result->getNumber<uint16_t>("group_id"));
 
-	uint64_t flags;
-	if (group) {
-		flags = group->flags;
-	} else {
-		flags = 0;
-	}
-
+	const auto& group = Groups::getGroup(result->getNumber<uint16_t>("group_id"));
+	uint64_t flags = group ? group->flags : 0;
 	specialVip = (flags & PlayerFlag_SpecialVIP) != 0;
 	return true;
 }

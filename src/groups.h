@@ -6,22 +6,17 @@
 
 struct Group
 {
+	uint16_t id;
 	std::string name;
-	uint64_t flags;
+	bool access;
 	uint32_t maxDepotItems;
 	uint32_t maxVipEntries;
-	uint16_t id;
-	bool access;
+	uint64_t flags;
 };
 
-class Groups
-{
-public:
-	bool load();
-	Group* getGroup(uint16_t id);
-
-private:
-	std::vector<Group> groups;
-};
+namespace Groups {
+bool load();
+std::shared_ptr<Group> getGroup(uint16_t id);
+}; // namespace Groups
 
 #endif // FS_GROUPS_H
