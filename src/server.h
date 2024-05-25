@@ -64,14 +64,81 @@ private:
 	bool pendingStart = false;
 };
 
+namespace {
+
+std::unordered_map<uint16_t, ServicePort_ptr> acceptors;
+
+boost::asio::io_context io_context;
+Signals signals{io_context};
+boost::asio::steady_timer death_timer{io_context};
+bool running = false;
+
+} // namespace
+
 namespace tfs::io::services {
 
-bool start();
-void shutdown();
+bool start()
+{
+	if (acceptors.empty()) {
+		return false;
+	}
+
+	assert(!running);
+	running = true;
+	io_context.run();
+	return true;
+}
+
+void shutdown()
+{
+	if (!running) {
+		return;
+	}
+	running = false;
+
+	for (auto& servicePortIt : acceptors) {
+		try {
+			boost::asio::post(io_context, [servicePort = servicePortIt.second]() { servicePort->onStopServer(); });
+		} catch (boost::system::system_error& e) {
+			std::cout << "[tfs::io::services::stop] Network Error: " << e.what() << std::endl;
+		}
+	}
+
+	acceptors.clear();
+
+	death_timer.expires_after(std::chrono::seconds(3));
+	death_timer.async_wait([](const boost::system::error_code&) { io_context.stop(); });
+}
 
 template <typename ProtocolType>
-bool add(uint16_t port);
+bool add(uint16_t port)
+{
+	if (port == 0) {
+		std::cout << "ERROR: No port provided for service " << ProtocolType::protocol_name() << ". Service disabled."
+		          << std::endl;
+		return false;
+	}
 
-} // namespace tfs::service
+	ServicePort_ptr service_port;
+
+	auto foundServicePort = acceptors.find(port);
+	if (foundServicePort == acceptors.end()) {
+		service_port = std::make_shared<ServicePort>(io_context);
+		service_port->open(port);
+		acceptors[port] = service_port;
+	} else {
+		service_port = foundServicePort->second;
+
+		if (service_port->is_single_socket() || ProtocolType::server_sends_first) {
+			std::cout << "ERROR: " << ProtocolType::protocol_name() << " and " << service_port->get_protocol_names()
+			          << " cannot use the same port " << port << '.' << std::endl;
+			return false;
+		}
+	}
+
+	return service_port->add_service(std::make_shared<Service<ProtocolType>>());
+}
+
+} // namespace tfs::io::services
 
 #endif // FS_SERVER_H
