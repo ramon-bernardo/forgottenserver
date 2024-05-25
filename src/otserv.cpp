@@ -48,7 +48,7 @@ void startupErrorMessage(const std::string& errorStr)
 	g_loaderSignal.notify_all();
 }
 
-void mainLoader(ServiceManager* services)
+void mainLoader()
 {
 	// dispatcher thread
 	g_game.setGameState(GAME_STATE_STARTUP);
@@ -214,14 +214,14 @@ void mainLoader(ServiceManager* services)
 	g_game.setGameState(GAME_STATE_INIT);
 
 	// Game client protocols
-	services->add<ProtocolGame>(static_cast<uint16_t>(getNumber(ConfigManager::GAME_PORT)));
-	services->add<ProtocolLogin>(static_cast<uint16_t>(getNumber(ConfigManager::LOGIN_PORT)));
+	tfs::io::services::add<ProtocolGame>(static_cast<uint16_t>(getNumber(ConfigManager::GAME_PORT)));
+	tfs::io::services::add<ProtocolLogin>(static_cast<uint16_t>(getNumber(ConfigManager::LOGIN_PORT)));
 
 	// OT protocols
-	services->add<ProtocolStatus>(static_cast<uint16_t>(getNumber(ConfigManager::STATUS_PORT)));
+	tfs::io::services::add<ProtocolStatus>(static_cast<uint16_t>(getNumber(ConfigManager::STATUS_PORT)));
 
 	// Legacy login protocol
-	services->add<ProtocolOld>(static_cast<uint16_t>(getNumber(ConfigManager::LOGIN_PORT)));
+	tfs::io::services::add<ProtocolOld>(static_cast<uint16_t>(getNumber(ConfigManager::LOGIN_PORT)));
 
 	RentPeriod_t rentPeriod;
 	std::string strRentPeriod = boost::algorithm::to_lower_copy(getString(ConfigManager::HOUSE_RENT_PERIOD));
@@ -252,7 +252,7 @@ void mainLoader(ServiceManager* services)
 	}
 #endif
 
-	g_game.start(services);
+	g_game.start();
 	g_game.setGameState(GAME_STATE_NORMAL);
 	g_loaderSignal.notify_all();
 }
@@ -272,18 +272,15 @@ void startServer()
 	// Setup bad allocation handler
 	std::set_new_handler(badAllocationHandler);
 
-	ServiceManager serviceManager;
-
 	g_dispatcher.start();
 	g_scheduler.start();
 
-	g_dispatcher.addTask([services = &serviceManager]() { mainLoader(services); });
+	g_dispatcher.addTask([=]() { mainLoader(); });
 
 	g_loaderSignal.wait(g_loaderUniqueLock);
 
-	if (serviceManager.is_running()) {
+	if (tfs::io::services::start()) {
 		std::cout << ">> " << getString(ConfigManager::SERVER_NAME) << " Server Online!" << std::endl << std::endl;
-		serviceManager.run();
 	} else {
 		std::cout << ">> No services running. The server is NOT online." << std::endl;
 		g_scheduler.shutdown();

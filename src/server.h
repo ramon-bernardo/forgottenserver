@@ -64,63 +64,14 @@ private:
 	bool pendingStart = false;
 };
 
-class ServiceManager
-{
-public:
-	ServiceManager() = default;
-	~ServiceManager();
+namespace tfs::io::services {
 
-	// non-copyable
-	ServiceManager(const ServiceManager&) = delete;
-	ServiceManager& operator=(const ServiceManager&) = delete;
-
-	void run();
-	void stop();
-
-	template <typename ProtocolType>
-	bool add(uint16_t port);
-
-	bool is_running() const { return !acceptors.empty(); }
-
-private:
-	void die();
-
-	std::unordered_map<uint16_t, ServicePort_ptr> acceptors;
-
-	boost::asio::io_context io_context;
-	Signals signals{io_context};
-	boost::asio::steady_timer death_timer{io_context};
-	bool running = false;
-};
+bool start();
+void shutdown();
 
 template <typename ProtocolType>
-bool ServiceManager::add(uint16_t port)
-{
-	if (port == 0) {
-		std::cout << "ERROR: No port provided for service " << ProtocolType::protocol_name() << ". Service disabled."
-		          << std::endl;
-		return false;
-	}
+bool add(uint16_t port);
 
-	ServicePort_ptr service_port;
-
-	auto foundServicePort = acceptors.find(port);
-
-	if (foundServicePort == acceptors.end()) {
-		service_port = std::make_shared<ServicePort>(io_context);
-		service_port->open(port);
-		acceptors[port] = service_port;
-	} else {
-		service_port = foundServicePort->second;
-
-		if (service_port->is_single_socket() || ProtocolType::server_sends_first) {
-			std::cout << "ERROR: " << ProtocolType::protocol_name() << " and " << service_port->get_protocol_names()
-			          << " cannot use the same port " << port << '.' << std::endl;
-			return false;
-		}
-	}
-
-	return service_port->add_service(std::make_shared<Service<ProtocolType>>());
-}
+} // namespace tfs::service
 
 #endif // FS_SERVER_H

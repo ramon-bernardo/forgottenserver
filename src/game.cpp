@@ -68,10 +68,8 @@ Game::~Game()
 	}
 }
 
-void Game::start(ServiceManager* manager)
+void Game::start()
 {
-	serviceManager = manager;
-
 	g_scheduler.addEvent(createSchedulerTask(EVENT_CREATURE_THINK_INTERVAL, [this]() { checkCreatures(0); }));
 	g_scheduler.addEvent(createSchedulerTask(EVENT_DECAYINTERVAL, [this]() { checkDecay(); }));
 }
@@ -4798,9 +4796,7 @@ void Game::shutdown()
 
 	cleanup();
 
-	if (serviceManager) {
-		serviceManager->stop();
-	}
+	tfs::io::services::shutdown();
 
 	ConnectionManager::getInstance().closeAll();
 
