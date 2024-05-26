@@ -135,7 +135,6 @@ private:
 	void parseLookInTrade(NetworkMessage& msg);
 
 	// market methods
-	void parseMarketLeave();
 	void parseMarketBrowse(NetworkMessage& msg);
 	void parseMarketCreateOffer(NetworkMessage& msg);
 	void parseMarketCancelOffer(NetworkMessage& msg);
