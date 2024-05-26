@@ -780,9 +780,6 @@ void ProtocolGame::parsePacket(NetworkMessage& msg)
 			break;
 		case 0xF3: /* get object info */
 			break;
-		case 0xF4:
-			parseMarketLeave();
-			break;
 		case 0xF5:
 			parseMarketBrowse(msg);
 			break;
@@ -1514,11 +1511,6 @@ void ProtocolGame::parseEnableSharedPartyExperience(NetworkMessage& msg)
 	bool sharedExpActive = msg.getByte() == 1;
 	g_dispatcher.addTask(
 	    [=, playerID = player->getID()]() { g_game.playerEnableSharedPartyExperience(playerID, sharedExpActive); });
-}
-
-void ProtocolGame::parseMarketLeave()
-{
-	g_dispatcher.addTask([playerID = player->getID()]() { g_game.playerLeaveMarket(playerID); });
 }
 
 void ProtocolGame::parseMarketBrowse(NetworkMessage& msg)

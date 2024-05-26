@@ -5121,16 +5121,6 @@ void Game::playerDebugAssert(uint32_t playerId, const std::string& assertLine, c
 	}
 }
 
-void Game::playerLeaveMarket(uint32_t playerId)
-{
-	Player* player = getPlayerByID(playerId);
-	if (!player) {
-		return;
-	}
-
-	player->setInMarket(false);
-}
-
 void Game::playerBrowseMarket(uint32_t playerId, uint16_t spriteId)
 {
 	Player* player = getPlayerByID(playerId);
