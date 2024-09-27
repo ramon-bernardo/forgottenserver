@@ -19,45 +19,49 @@ struct GuildRank
 
 using GuildRank_ptr = std::shared_ptr<GuildRank>;
 
+static constexpr uint8_t GUILD_MEMBER_RANK_LEVEL_DEFAULT = 1;
+
 class Guild
 {
 public:
-	static constexpr uint8_t MEMBER_RANK_LEVEL_DEFAULT = 1;
-
 	Guild(uint32_t id, std::string_view name) : name{name}, id{id} {}
 
-	uint32_t getId() const { return id; }
-	const std::string& getName() const { return name; }
+	auto getId() const { return id; }
+	const auto& getName() const { return name; }
+
+	const auto& getMotd() const { return motd; }
+	void setMotd(const std::string& motd) { this->motd = motd; }
 
 	void addMember(Player* player);
 	void removeMember(Player* player);
-	const std::list<Player*>& getMembersOnline() const { return membersOnline; }
-	uint32_t getMemberCount() const { return memberCount; }
+
+	const auto& getMembersOnline() const { return membersOnline; }
+	auto getMemberCount() const { return memberCount; }
 	void setMemberCount(uint32_t count) { memberCount = count; }
 
 	void addRank(uint32_t rankId, std::string_view rankName, uint8_t level);
-	const std::vector<GuildRank_ptr>& getRanks() const { return ranks; }
+	const auto& getRanks() const { return ranks; }
+
 	GuildRank_ptr getRankById(uint32_t rankId);
 	GuildRank_ptr getRankByName(const std::string& name) const;
 	GuildRank_ptr getRankByLevel(uint8_t level) const;
 
-	const std::string& getMotd() const { return motd; }
-	void setMotd(const std::string& motd) { this->motd = motd; }
-
 private:
-	std::list<Player*> membersOnline;
-	std::vector<GuildRank_ptr> ranks;
+	uint32_t id;
 	std::string name;
 	std::string motd;
-	uint32_t id;
+
+	std::list<Player*> membersOnline;
 	uint32_t memberCount = 0;
+
+	std::vector<GuildRank_ptr> ranks;
 };
 
 using Guild_ptr = std::shared_ptr<Guild>;
 
-namespace IOGuild {
-Guild_ptr loadGuild(uint32_t guildId);
-uint32_t getGuildIdByName(const std::string& name);
-}; // namespace IOGuild
+namespace tfs::io::guild {
+Guild_ptr load(uint32_t guildId);
+uint32_t getIdByName(const std::string& name);
+}; // namespace tfs::io::guild
 
 #endif // FS_GUILD_H

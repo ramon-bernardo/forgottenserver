@@ -55,10 +55,10 @@ GuildRank_ptr Guild::getRankByLevel(uint8_t level) const
 	return nullptr;
 }
 
-Guild_ptr IOGuild::loadGuild(uint32_t guildId)
+Guild_ptr tfs::io::guild::load(uint32_t guildId)
 {
-	Database& db = Database::getInstance();
-	DBResult_ptr result = db.storeQuery(fmt::format("SELECT `name` FROM `guilds` WHERE `id` = {:d}", guildId));
+	auto& db = Database::getInstance();
+	auto result = db.storeQuery(fmt::format("SELECT `name` FROM `guilds` WHERE `id` = {:d}", guildId));
 	if (!result) {
 		return nullptr;
 	}
@@ -74,14 +74,12 @@ Guild_ptr IOGuild::loadGuild(uint32_t guildId)
 	return guild;
 }
 
-uint32_t IOGuild::getGuildIdByName(const std::string& name)
+uint32_t tfs::io::guild::getIdByName(const std::string& name)
 {
-	Database& db = Database::getInstance();
-
-	DBResult_ptr result =
-	    db.storeQuery(fmt::format("SELECT `id` FROM `guilds` WHERE `name` = {:s}", db.escapeString(name)));
-	if (!result) {
-		return 0;
+	auto& db = Database::getInstance();
+	if (auto result =
+	        db.storeQuery(fmt::format("SELECT `id` FROM `guilds` WHERE `name` = {:s}", db.escapeString(name)))) {
+		return result->getNumber<uint32_t>("id");
 	}
-	return result->getNumber<uint32_t>("id");
+	return 0;
 }

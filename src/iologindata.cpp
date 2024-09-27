@@ -311,7 +311,7 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
 
 		auto guild = g_game.getGuild(guildId);
 		if (!guild) {
-			guild = IOGuild::loadGuild(guildId);
+			guild = tfs::io::guild::load(guildId);
 			if (guild) {
 				g_game.addGuild(guild);
 			} else {

@@ -4695,7 +4695,7 @@ void Player::setGuild(Guild_ptr guild)
 	this->guildRank = nullptr;
 
 	if (guild) {
-		const auto& rank = guild->getRankByLevel(Guild::MEMBER_RANK_LEVEL_DEFAULT);
+		const auto& rank = guild->getRankByLevel(GUILD_MEMBER_RANK_LEVEL_DEFAULT);
 		if (!rank) {
 			return;
 		}

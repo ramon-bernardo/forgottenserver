@@ -433,7 +433,7 @@ namespace {
 
 const Guild_ptr getGuildByName(const std::string& name)
 {
-	uint32_t guildId = IOGuild::getGuildIdByName(name);
+	uint32_t guildId = tfs::io::guild::getIdByName(name);
 	if (guildId == 0) {
 		return nullptr;
 	}
@@ -442,7 +442,7 @@ const Guild_ptr getGuildByName(const std::string& name)
 		return guild;
 	}
 
-	return IOGuild::loadGuild(guildId);
+	return tfs::io::guild::load(guildId);
 }
 
 } // namespace
