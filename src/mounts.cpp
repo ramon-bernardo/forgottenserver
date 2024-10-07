@@ -1,73 +1,79 @@
 // Copyright 2023 The Forgotten Server Authors. All rights reserved.
 // Use of this source code is governed by the GPL-2.0 License that can be found in the LICENSE file.
 
-#include "otpch.h"
-
 #include "mounts.h"
 
 #include "pugicast.h"
 #include "tools.h"
 
-bool Mounts::reload()
-{
-	mounts.clear();
-	return loadFromXml();
+namespace {
+
+std::set<Mount_ptr> loaded_mounts;
+
 }
 
-bool Mounts::loadFromXml()
+bool tfs::game::mounts::reload()
+{
+	loaded_mounts.clear();
+	return tfs::game::mounts::load_from_xml();
+}
+
+bool tfs::game::mounts::load_from_xml()
 {
 	pugi::xml_document doc;
 	pugi::xml_parse_result result = doc.load_file("data/XML/mounts.xml");
 	if (!result) {
-		printXMLError("Error - Mounts::loadFromXml", "data/XML/mounts.xml", result);
+		printXMLError("Error - tfs::game::mount::load_from_xml", "data/XML/mounts.xml", result);
 		return false;
 	}
 
-	for (auto mountNode : doc.child("mounts").children()) {
-		uint32_t nodeId = pugi::cast<uint32_t>(mountNode.attribute("id").value());
-		if (nodeId == 0 || nodeId > std::numeric_limits<uint16_t>::max()) {
-			std::cout << "[Notice - Mounts::loadFromXml] Mount id \"" << nodeId << "\" is not within 1 and 65535 range"
+	for (auto& node : doc.child("mounts").children()) {
+		auto node_id = pugi::cast<uint32_t>(node.attribute("id").value());
+		if (node_id == 0 || node_id > std::numeric_limits<uint16_t>::max()) {
+			std::cout << "[Notice - tfs::game::mounts::load_from_xml] Mount id \"" << node_id
+			          << "\" is not within 1 and 65535 range" << std::endl;
+			continue;
+		}
+
+		if (tfs::game::mounts::get_mount_by_id(node_id)) {
+			std::cout << "[Notice - tfs::game::mounts::load_from_xml] Duplicate mount with id: " << node_id
 			          << std::endl;
 			continue;
 		}
 
-		if (getMountByID(nodeId)) {
-			std::cout << "[Notice - Mounts::loadFromXml] Duplicate mount with id: " << nodeId << std::endl;
-			continue;
-		}
+		auto mount = std::make_shared<Mount>(
+		    static_cast<uint16_t>(node_id), pugi::cast<uint16_t>(node.attribute("clientid").value()),
+		    node.attribute("name").as_string(), pugi::cast<int32_t>(node.attribute("speed").value()),
+		    node.attribute("premium").as_bool());
 
-		mounts.emplace_back(
-		    static_cast<uint16_t>(nodeId), pugi::cast<uint16_t>(mountNode.attribute("clientid").value()),
-		    mountNode.attribute("name").as_string(), pugi::cast<int32_t>(mountNode.attribute("speed").value()),
-		    mountNode.attribute("premium").as_bool());
+		loaded_mounts.insert(mount);
 	}
-	mounts.shrink_to_fit();
+
 	return true;
 }
 
-Mount* Mounts::getMountByID(uint16_t id)
+Mount_ptr tfs::game::mounts::get_mount_by_id(uint16_t id)
 {
-	auto it = std::find_if(mounts.begin(), mounts.end(), [id](const Mount& mount) { return mount.id == id; });
-
-	return it != mounts.end() ? &*it : nullptr;
+	auto it = std::find_if(loaded_mounts.begin(), loaded_mounts.end(),
+	                       [id](const Mount_ptr& mount) { return mount->id == id; });
+	return (it != loaded_mounts.end()) ? *it : nullptr;
 }
 
-Mount* Mounts::getMountByName(const std::string& name)
+Mount_ptr tfs::game::mounts::get_mount_by_name(std::string_view name)
 {
-	auto mountName = name.c_str();
-	for (auto& it : mounts) {
-		if (caseInsensitiveEqual(mountName, it.name)) {
-			return &it;
+	for (const auto& mount : loaded_mounts) {
+		if (caseInsensitiveEqual(name, mount->name)) {
+			return mount;
 		}
 	}
-
 	return nullptr;
 }
 
-Mount* Mounts::getMountByClientID(uint16_t clientId)
+Mount_ptr tfs::game::mounts::get_mount_by_client_id(uint16_t clientId)
 {
-	auto it = std::find_if(mounts.begin(), mounts.end(),
-	                       [clientId](const Mount& mount) { return mount.clientId == clientId; });
-
-	return it != mounts.end() ? &*it : nullptr;
+	auto it = std::find_if(loaded_mounts.begin(), loaded_mounts.end(),
+	                       [clientId](const Mount_ptr& mount) { return mount->client_id == clientId; });
+	return (it != loaded_mounts.end()) ? *it : nullptr;
 }
+
+std::set<Mount_ptr>& tfs::game::mounts::get_mounts() { return loaded_mounts; }

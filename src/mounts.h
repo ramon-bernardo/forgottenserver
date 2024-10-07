@@ -4,32 +4,32 @@
 #ifndef FS_MOUNTS_H
 #define FS_MOUNTS_H
 
+#include "otpch.h"
+
 struct Mount
 {
-	Mount(uint16_t id, uint16_t clientId, std::string name, int32_t speed, bool premium) :
-	    name(std::move(name)), speed(speed), clientId(clientId), id(id), premium(premium)
+	Mount(uint16_t id, uint16_t client_id, std::string name, int32_t speed, bool premium) :
+	    id(id), client_id(client_id), name(std::move(name)), speed(speed), premium(premium)
 	{}
 
+	uint16_t id;
+	uint16_t client_id;
 	std::string name;
 	int32_t speed;
-	uint16_t clientId;
-	uint16_t id;
 	bool premium;
 };
 
-class Mounts
-{
-public:
-	bool reload();
-	bool loadFromXml();
-	Mount* getMountByID(uint16_t id);
-	Mount* getMountByName(const std::string& name);
-	Mount* getMountByClientID(uint16_t clientId);
+using Mount_ptr = std::shared_ptr<Mount>;
 
-	const std::vector<Mount>& getMounts() const { return mounts; }
+namespace tfs::game::mounts {
 
-private:
-	std::vector<Mount> mounts;
-};
+bool reload();
+bool load_from_xml();
+Mount_ptr get_mount_by_id(uint16_t id);
+Mount_ptr get_mount_by_name(std::string_view name);
+Mount_ptr get_mount_by_client_id(uint16_t client_id);
+std::set<Mount_ptr>& get_mounts();
+
+} // namespace tfs::game::mounts
 
 #endif // FS_MOUNTS_H

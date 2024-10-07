@@ -92,7 +92,7 @@ void Game::setGameState(GameState_t newState)
 
 			map.spawns.startup();
 
-			mounts.loadFromXml();
+			tfs::game::mounts::load_from_xml();
 
 			loadPlayersRecord();
 
@@ -3470,7 +3470,7 @@ void Game::playerChangeOutfit(uint32_t playerId, Outfit_t outfit, bool randomize
 	}
 
 	if (outfit.lookMount != 0) {
-		Mount* mount = mounts.getMountByClientID(outfit.lookMount);
+		const auto& mount = tfs::game::mounts::get_mount_by_client_id(outfit.lookMount);
 		if (!mount) {
 			return;
 		}
@@ -3481,9 +3481,8 @@ void Game::playerChangeOutfit(uint32_t playerId, Outfit_t outfit, bool randomize
 
 		int32_t speedChange = mount->speed;
 		if (player->isMounted()) {
-			Mount* prevMount = mounts.getMountByID(player->getCurrentMount());
-			if (prevMount) {
-				speedChange -= prevMount->speed;
+			if (const auto& prev_mount = tfs::game::mounts::get_mount_by_id(player->getCurrentMount())) {
+				speedChange -= prev_mount->speed;
 			}
 		}
 
@@ -3505,8 +3504,9 @@ void Game::playerChangeOutfit(uint32_t playerId, Outfit_t outfit, bool randomize
 		}
 
 		if (player->randomizeMount && player->hasMounts()) {
-			const Mount* mount = mounts.getMountByID(player->getRandomMount());
-			outfit.lookMount = mount->clientId;
+			if (const auto& mount = tfs::game::mounts::get_mount_by_id(player->getRandomMount())) {
+				outfit.lookMount = mount->client_id;
+			}
 		}
 
 		internalCreatureChangeOutfit(player, outfit);
@@ -5819,7 +5819,7 @@ bool Game::reload(ReloadTypes_t reloadType)
 		case RELOAD_TYPE_MONSTERS:
 			return g_monsters.reload();
 		case RELOAD_TYPE_MOUNTS:
-			return mounts.reload();
+			return tfs::game::mounts::reload();
 		case RELOAD_TYPE_MOVEMENTS:
 			return g_moveEvents->reload();
 		case RELOAD_TYPE_NPCS: {
@@ -5891,7 +5891,7 @@ bool Game::reload(ReloadTypes_t reloadType)
 			g_weapons->reload();
 			g_weapons->clear(true);
 			g_weapons->loadDefaults();
-			mounts.reload();
+			tfs::game::mounts::reload();
 			g_globalEvents->reload();
 			g_events->load();
 			g_chat->load();

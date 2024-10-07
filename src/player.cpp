@@ -1135,7 +1135,7 @@ void Player::onCreatureAppear(Creature* creature, bool isLogin)
 		// load mount speed bonus
 		uint16_t currentMountId = currentOutfit.lookMount;
 		if (currentMountId != 0) {
-			Mount* currentMount = g_game.mounts.getMountByClientID(currentMountId);
+			const auto& currentMount = tfs::game::mounts::get_mount_by_client_id(currentMountId);
 			if (currentMount && hasMount(currentMount)) {
 				g_game.changeSpeed(this, currentMount->speed);
 			} else {
@@ -4293,9 +4293,9 @@ GuildEmblems_t Player::getGuildEmblem(const Player* player) const
 uint16_t Player::getRandomMount() const
 {
 	std::vector<uint16_t> mountsId;
-	for (const Mount& mount : g_game.mounts.getMounts()) {
-		if (hasMount(&mount)) {
-			mountsId.push_back(mount.id);
+	for (const auto& mount : tfs::game::mounts::get_mounts()) {
+		if (hasMount(mount)) {
+			mountsId.push_back(mount->id);
 		}
 	}
 
@@ -4338,18 +4338,18 @@ bool Player::toggleMount(bool mount)
 			currentMountId = getRandomMount();
 		}
 
-		Mount* currentMount = g_game.mounts.getMountByID(currentMountId);
-		if (!currentMount) {
+		const auto& current_mount = tfs::game::mounts::get_mount_by_id(currentMountId);
+		if (!current_mount) {
 			return false;
 		}
 
-		if (!hasMount(currentMount)) {
+		if (!hasMount(current_mount)) {
 			setCurrentMount(0);
 			sendOutfitWindow();
 			return false;
 		}
 
-		if (currentMount->premium && !isPremium()) {
+		if (current_mount->premium && !isPremium()) {
 			sendCancelMessage(RETURNVALUE_YOUNEEDPREMIUMACCOUNT);
 			return false;
 		}
@@ -4359,10 +4359,10 @@ bool Player::toggleMount(bool mount)
 			return false;
 		}
 
-		defaultOutfit.lookMount = currentMount->clientId;
+		defaultOutfit.lookMount = current_mount->client_id;
 
-		if (currentMount->speed != 0) {
-			g_game.changeSpeed(this, currentMount->speed);
+		if (current_mount->speed != 0) {
+			g_game.changeSpeed(this, current_mount->speed);
 		}
 	} else {
 		if (!isMounted()) {
@@ -4379,11 +4379,11 @@ bool Player::toggleMount(bool mount)
 
 bool Player::tameMount(uint16_t mountId)
 {
-	if (!g_game.mounts.getMountByID(mountId)) {
+	const auto& mount = tfs::game::mounts::get_mount_by_id(mountId);
+	if (!mount) {
 		return false;
 	}
 
-	Mount* mount = g_game.mounts.getMountByID(mountId);
 	if (hasMount(mount)) {
 		return false;
 	}
@@ -4394,11 +4394,11 @@ bool Player::tameMount(uint16_t mountId)
 
 bool Player::untameMount(uint16_t mountId)
 {
-	if (!g_game.mounts.getMountByID(mountId)) {
+	const auto& mount = tfs::game::mounts::get_mount_by_id(mountId);
+	if (!mount) {
 		return false;
 	}
 
-	Mount* mount = g_game.mounts.getMountByID(mountId);
 	if (!hasMount(mount)) {
 		return false;
 	}
@@ -4417,7 +4417,7 @@ bool Player::untameMount(uint16_t mountId)
 	return true;
 }
 
-bool Player::hasMount(const Mount* mount) const
+bool Player::hasMount(const Mount_ptr mount) const
 {
 	if (isAccessPlayer()) {
 		return true;
@@ -4432,8 +4432,8 @@ bool Player::hasMount(const Mount* mount) const
 
 bool Player::hasMounts() const
 {
-	for (const Mount& mount : g_game.mounts.getMounts()) {
-		if (hasMount(&mount)) {
+	for (const auto& mount : tfs::game::mounts::get_mounts()) {
+		if (hasMount(mount)) {
 			return true;
 		}
 	}
@@ -4442,9 +4442,10 @@ bool Player::hasMounts() const
 
 void Player::dismount()
 {
-	Mount* mount = g_game.mounts.getMountByID(getCurrentMount());
-	if (mount && mount->speed > 0) {
-		g_game.changeSpeed(this, -mount->speed);
+	if (const auto& mount = tfs::game::mounts::get_mount_by_id(getCurrentMount())) {
+		if (mount->speed > 0) {
+			g_game.changeSpeed(this, -mount->speed);
+		}
 	}
 
 	defaultOutfit.lookMount = 0;

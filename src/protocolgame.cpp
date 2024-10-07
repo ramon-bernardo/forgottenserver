@@ -3066,9 +3066,8 @@ void ProtocolGame::sendOutfitWindow()
 		currentOutfit = newOutfit;
 	}
 
-	Mount* currentMount = g_game.mounts.getMountByID(player->getCurrentMount());
-	if (currentMount) {
-		currentOutfit.lookMount = currentMount->clientId;
+	if (const auto& current_mount = tfs::game::mounts::get_mount_by_id(player->getCurrentMount())) {
+		currentOutfit.lookMount = current_mount->client_id;
 	}
 
 	bool mounted;
@@ -3113,16 +3112,16 @@ void ProtocolGame::sendOutfitWindow()
 		                   // tooltip (hardcoded)
 	}
 
-	std::vector<const Mount*> mounts;
-	for (const Mount& mount : g_game.mounts.getMounts()) {
-		if (player->hasMount(&mount)) {
-			mounts.push_back(&mount);
+	std::vector<const Mount_ptr> mounts;
+	for (const auto& mount : tfs::game::mounts::get_mounts()) {
+		if (player->hasMount(mount)) {
+			mounts.push_back(mount);
 		}
 	}
 
 	msg.add<uint16_t>(mounts.size());
-	for (const Mount* mount : mounts) {
-		msg.add<uint16_t>(mount->clientId);
+	for (const auto mount : mounts) {
+		msg.add<uint16_t>(mount->client_id);
 		msg.addString(mount->name);
 		msg.addByte(0x00); // mode: 0x00 - available, 0x01 store (requires U32 store offerId)
 	}
@@ -3210,10 +3209,10 @@ void ProtocolGame::sendPodiumWindow(const Item* item)
 	}
 
 	// fetch player mounts
-	std::vector<const Mount*> mounts;
-	for (const Mount& mount : g_game.mounts.getMounts()) {
-		if (player->hasMount(&mount)) {
-			mounts.push_back(&mount);
+	std::vector<const Mount_ptr> mounts;
+	for (const auto& mount : tfs::game::mounts::get_mounts()) {
+		if (player->hasMount(mount)) {
+			mounts.push_back(mount);
 		}
 	}
 
@@ -3251,8 +3250,8 @@ void ProtocolGame::sendPodiumWindow(const Item* item)
 
 	// available mounts
 	msg.add<uint16_t>(mounts.size());
-	for (const Mount* mount : mounts) {
-		msg.add<uint16_t>(mount->clientId);
+	for (const auto& mount : mounts) {
+		msg.add<uint16_t>(mount->client_id);
 		msg.addString(mount->name);
 		msg.addByte(0x00); // mode: 0x00 - available, 0x01 store (requires U32 store offerId)
 	}

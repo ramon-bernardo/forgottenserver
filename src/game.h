@@ -482,7 +482,6 @@ public:
 
 	Groups groups;
 	Map map;
-	Mounts mounts;
 
 	std::forward_list<Item*> toDecayItems;
 

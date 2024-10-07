@@ -4783,12 +4783,12 @@ int LuaScriptInterface::luaGameGetItemTypeByClientId(lua_State* L)
 int LuaScriptInterface::luaGameGetMountIdByLookType(lua_State* L)
 {
 	// Game.getMountIdByLookType(lookType)
-	Mount* mount = nullptr;
-	if (isNumber(L, 1)) {
-		mount = g_game.mounts.getMountByClientID(tfs::lua::getNumber<uint16_t>(L, 1));
+	if (!isNumber(L, 1)) {
+		lua_pushnil(L);
+		return 1;
 	}
 
-	if (mount) {
+	if (const auto& mount = tfs::game::mounts::get_mount_by_client_id(tfs::lua::getNumber<uint16_t>(L, 1))) {
 		lua_pushnumber(L, mount->id);
 	} else {
 		lua_pushnil(L);
@@ -4855,18 +4855,18 @@ int LuaScriptInterface::luaGameGetOutfits(lua_State* L)
 int LuaScriptInterface::luaGameGetMounts(lua_State* L)
 {
 	// Game.getMounts()
-	const auto& mounts = g_game.mounts.getMounts();
+	const auto& mounts = tfs::game::mounts::get_mounts();
 	lua_createtable(L, mounts.size(), 0);
 
 	int index = 0;
 	for (const auto& mount : mounts) {
 		lua_createtable(L, 0, 5);
 
-		setField(L, "name", mount.name);
-		setField(L, "speed", mount.speed);
-		setField(L, "clientId", mount.clientId);
-		setField(L, "id", mount.id);
-		setField(L, "premium", mount.premium);
+		setField(L, "name", mount->name);
+		setField(L, "speed", mount->speed);
+		setField(L, "clientId", mount->client_id);
+		setField(L, "id", mount->id);
+		setField(L, "premium", mount->premium);
 
 		lua_rawseti(L, -2, ++index);
 	}
@@ -10557,18 +10557,18 @@ int LuaScriptInterface::luaPlayerAddMount(lua_State* L)
 		return 1;
 	}
 
-	uint16_t mountId;
+	Mount_ptr mount = nullptr;
 	if (isNumber(L, 2)) {
-		mountId = tfs::lua::getNumber<uint16_t>(L, 2);
-	} else {
-		Mount* mount = g_game.mounts.getMountByName(tfs::lua::getString(L, 2));
-		if (!mount) {
-			lua_pushnil(L);
-			return 1;
-		}
-		mountId = mount->id;
+		mount = tfs::game::mounts::get_mount_by_id(tfs::lua::getNumber<uint16_t>(L, 2));
+	} else if (lua_isstring(L, 2)) {
+		mount = tfs::game::mounts::get_mount_by_name(tfs::lua::getString(L, 2));
 	}
-	tfs::lua::pushBoolean(L, player->tameMount(mountId));
+
+	if (mount) {
+		tfs::lua::pushBoolean(L, player->tameMount(mount->id));
+	} else {
+		lua_pushnil(L);
+	}
 	return 1;
 }
 
@@ -10581,18 +10581,18 @@ int LuaScriptInterface::luaPlayerRemoveMount(lua_State* L)
 		return 1;
 	}
 
-	uint16_t mountId;
+	Mount_ptr mount = nullptr;
 	if (isNumber(L, 2)) {
-		mountId = tfs::lua::getNumber<uint16_t>(L, 2);
-	} else {
-		Mount* mount = g_game.mounts.getMountByName(tfs::lua::getString(L, 2));
-		if (!mount) {
-			lua_pushnil(L);
-			return 1;
-		}
-		mountId = mount->id;
+		mount = tfs::game::mounts::get_mount_by_id(tfs::lua::getNumber<uint16_t>(L, 2));
+	} else if (lua_isstring(L, 2)) {
+		mount = tfs::game::mounts::get_mount_by_name(tfs::lua::getString(L, 2));
 	}
-	tfs::lua::pushBoolean(L, player->untameMount(mountId));
+
+	if (mount) {
+		tfs::lua::pushBoolean(L, player->untameMount(mount->id));
+	} else {
+		lua_pushnil(L);
+	}
 	return 1;
 }
 
@@ -10605,11 +10605,11 @@ int LuaScriptInterface::luaPlayerHasMount(lua_State* L)
 		return 1;
 	}
 
-	Mount* mount = nullptr;
+	Mount_ptr mount = nullptr;
 	if (isNumber(L, 2)) {
-		mount = g_game.mounts.getMountByID(tfs::lua::getNumber<uint16_t>(L, 2));
-	} else {
-		mount = g_game.mounts.getMountByName(tfs::lua::getString(L, 2));
+		mount = tfs::game::mounts::get_mount_by_id(tfs::lua::getNumber<uint16_t>(L, 2));
+	} else if (lua_isstring(L, 2)) {
+		mount = tfs::game::mounts::get_mount_by_name(lua_tostring(L, 2));
 	}
 
 	if (mount) {

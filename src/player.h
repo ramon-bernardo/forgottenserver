@@ -10,13 +10,13 @@
 #include "enums.h"
 #include "groups.h"
 #include "guild.h"
+#include "mounts.h"
 #include "protocolgame.h"
 #include "town.h"
 #include "vocation.h"
 
 class DepotChest;
 class House;
-struct Mount;
 class NetworkMessage;
 class Npc;
 class Party;
@@ -121,7 +121,7 @@ public:
 	bool toggleMount(bool mount);
 	bool tameMount(uint16_t mountId);
 	bool untameMount(uint16_t mountId);
-	bool hasMount(const Mount* mount) const;
+	bool hasMount(Mount_ptr mount) const;
 	bool hasMounts() const;
 	void dismount();
 
