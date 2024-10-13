@@ -273,6 +273,9 @@ public:
 	DynamicTile(const DynamicTile&) = delete;
 	DynamicTile& operator=(const DynamicTile&) = delete;
 
+	DynamicTile* getDynamicTile() override final { return this; }
+	const DynamicTile* getDynamicTile() const override final { return this; }
+
 	TileItemVector* getItemList() override { return &items; }
 	const TileItemVector* getItemList() const override { return &items; }
 	TileItemVector* makeItemList() override { return &items; }
@@ -305,6 +308,9 @@ public:
 	// non-copyable
 	StaticTile(const StaticTile&) = delete;
 	StaticTile& operator=(const StaticTile&) = delete;
+
+	StaticTile* getStaticTile() override final { return this; }
+	const StaticTile* getStaticTile() const override final { return this; }
 
 	TileItemVector* getItemList() override { return items.get(); }
 	const TileItemVector* getItemList() const override { return items.get(); }

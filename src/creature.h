@@ -92,12 +92,6 @@ public:
 
 	Creature* getCreature() override final { return this; }
 	const Creature* getCreature() const override final { return this; }
-	virtual Player* getPlayer() { return nullptr; }
-	virtual const Player* getPlayer() const { return nullptr; }
-	virtual Npc* getNpc() { return nullptr; }
-	virtual const Npc* getNpc() const { return nullptr; }
-	virtual Monster* getMonster() { return nullptr; }
-	virtual const Monster* getMonster() const { return nullptr; }
 
 	virtual const std::string& getName() const = 0;
 	virtual const std::string& getNameDescription() const = 0;

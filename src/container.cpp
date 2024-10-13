@@ -78,7 +78,17 @@ std::string Container::getName(bool addArticle /* = false*/) const
 	return getNameDescription(it, this, -1, addArticle);
 }
 
-bool Container::hasParent() const { return getID() != ITEM_BROWSEFIELD && !dynamic_cast<const Player*>(getParent()); }
+bool Container::hasParent() const
+{
+	if (getID() == ITEM_BROWSEFIELD) {
+		return false;
+	}
+
+	if (auto parent = getParent()) {
+		return !parent->getPlayer();
+	}
+	return false;
+}
 
 void Container::addItem(Item* item)
 {
@@ -255,14 +265,14 @@ ReturnValue Container::queryAdd(int32_t index, const Thing& thing, uint32_t coun
 	}
 
 	// store items can be only moved into depot chest or store inbox
-	if (item->isStoreItem() && !dynamic_cast<const DepotChest*>(this)) {
+	if (item->isStoreItem() && !this->getDepotChest()) {
 		return RETURNVALUE_ITEMCANNOTBEMOVEDTHERE;
 	}
 
 	const Cylinder* cylinder = getParent();
 
 	// don't allow moving items into container that is store item and is in store inbox
-	if (isStoreItem() && dynamic_cast<const StoreInbox*>(cylinder)) {
+	if (isStoreItem() && cylinder && !cylinder->getPlayer() && cylinder->getStoreInbox()) {
 		ReturnValue ret = RETURNVALUE_ITEMCANNOTBEMOVEDTHERE;
 		if (!item->isStoreItem()) {
 			ret = RETURNVALUE_CANNOTMOVEITEMISNOTSTOREITEM;
@@ -276,7 +286,7 @@ ReturnValue Container::queryAdd(int32_t index, const Thing& thing, uint32_t coun
 				return RETURNVALUE_THISISIMPOSSIBLE;
 			}
 
-			if (dynamic_cast<const Inbox*>(cylinder)) {
+			if (!cylinder->getPlayer() && cylinder->getInbox()) {
 				return RETURNVALUE_CONTAINERNOTENOUGHROOM;
 			}
 
@@ -296,17 +306,18 @@ ReturnValue Container::queryAdd(int32_t index, const Thing& thing, uint32_t coun
 		}
 	}
 
-	const Cylinder* const topParent = getTopParent();
-	if (actor && getBoolean(ConfigManager::ONLY_INVITED_CAN_MOVE_HOUSE_ITEMS)) {
-		if (const HouseTile* const houseTile = dynamic_cast<const HouseTile*>(topParent->getTile())) {
-			if (!topParent->getCreature() && !houseTile->getHouse()->isInvited(actor->getPlayer())) {
-				return RETURNVALUE_PLAYERISNOTINVITED;
+	if (const Cylinder* const topParent = getTopParent()) {
+		if (actor && getBoolean(ConfigManager::ONLY_INVITED_CAN_MOVE_HOUSE_ITEMS)) {
+			if (const HouseTile* const houseTile = topParent->getHouseTile()) {
+				if (!topParent->getCreature() && !houseTile->getHouse()->isInvited(actor->getPlayer())) {
+					return RETURNVALUE_PLAYERISNOTINVITED;
+				}
 			}
 		}
-	}
 
-	if (topParent != this) {
-		return topParent->queryAdd(INDEX_WHEREEVER, *item, count, flags | FLAG_CHILDISOWNER, actor);
+		if (topParent != this) {
+			return topParent->queryAdd(INDEX_WHEREEVER, *item, count, flags | FLAG_CHILDISOWNER, actor);
+		}
 	}
 	return RETURNVALUE_NOERROR;
 }
@@ -385,10 +396,11 @@ ReturnValue Container::queryRemove(const Thing& thing, uint32_t count, uint32_t 
 	}
 
 	if (actor && getBoolean(ConfigManager::ONLY_INVITED_CAN_MOVE_HOUSE_ITEMS)) {
-		const Cylinder* const topParent = getTopParent();
-		if (const HouseTile* const houseTile = dynamic_cast<const HouseTile*>(topParent->getTile())) {
-			if (!topParent->getCreature() && !houseTile->getHouse()->isInvited(actor->getPlayer())) {
-				return RETURNVALUE_PLAYERISNOTINVITED;
+		if (const Cylinder* const topParent = getTopParent()) {
+			if (const HouseTile* const houseTile = topParent->getHouseTile()) {
+				if (!topParent->getCreature() && !houseTile->getHouse()->isInvited(actor->getPlayer())) {
+					return RETURNVALUE_PLAYERISNOTINVITED;
+				}
 			}
 		}
 	}
@@ -407,9 +419,10 @@ Cylinder* Container::queryDestination(int32_t& index, const Thing& thing, Item**
 		index = INDEX_WHEREEVER;
 		*destItem = nullptr;
 
-		Container* parentContainer = dynamic_cast<Container*>(getParent());
-		if (parentContainer) {
-			return parentContainer;
+		if (auto parent = getParent()) {
+			if (auto parentContainer = parent->getContainer()) {
+				return parentContainer;
+			}
 		}
 		return this;
 	}
@@ -440,11 +453,12 @@ Cylinder* Container::queryDestination(int32_t& index, const Thing& thing, Item**
 			*destItem = itemFromIndex;
 		}
 
-		Cylinder* subCylinder = dynamic_cast<Cylinder*>(*destItem);
-		if (subCylinder) {
-			index = INDEX_WHEREEVER;
-			*destItem = nullptr;
-			return subCylinder;
+		if (auto subItem = *destItem) {
+			if (auto subCylinder = subItem->getCylinder()) {
+				index = INDEX_WHEREEVER;
+				*destItem = nullptr;
+				return subCylinder;
+			}
 		}
 	}
 

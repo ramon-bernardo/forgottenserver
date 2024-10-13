@@ -11,6 +11,9 @@ class Inbox final : public Container
 public:
 	explicit Inbox(uint16_t type);
 
+	Inbox* getInbox() override { return this; }
+	const Inbox* getInbox() const override { return this; }
+
 	// cylinder implementations
 	ReturnValue queryAdd(int32_t index, const Thing& thing, uint32_t count, uint32_t flags,
 	                     Creature* actor = nullptr) const override;

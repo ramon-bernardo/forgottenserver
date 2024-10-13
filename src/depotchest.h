@@ -11,6 +11,9 @@ class DepotChest final : public Container
 public:
 	explicit DepotChest(uint16_t type, bool paginated = true);
 
+	DepotChest* getDepotChest() override { return this; }
+	const DepotChest* getDepotChest() const override { return this; }
+
 	// serialization
 	void setMaxDepotItems(uint32_t maxitems) { maxDepotItems = maxitems; }
 

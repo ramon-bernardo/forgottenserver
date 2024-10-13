@@ -256,7 +256,7 @@ void Item::setID(uint16_t newid)
 Cylinder* Item::getTopParent()
 {
 	Cylinder* aux = getParent();
-	Cylinder* prevaux = dynamic_cast<Cylinder*>(this);
+	Cylinder* prevaux = this->getCylinder();
 	if (!aux) {
 		return prevaux;
 	}
@@ -275,7 +275,7 @@ Cylinder* Item::getTopParent()
 const Cylinder* Item::getTopParent() const
 {
 	const Cylinder* aux = getParent();
-	const Cylinder* prevaux = dynamic_cast<const Cylinder*>(this);
+	const Cylinder* prevaux = this->getCylinder();
 	if (!aux) {
 		return prevaux;
 	}
@@ -293,22 +293,30 @@ const Cylinder* Item::getTopParent() const
 
 Tile* Item::getTile()
 {
-	Cylinder* cylinder = getTopParent();
-	// get root cylinder
-	if (cylinder && cylinder->getParent()) {
-		cylinder = cylinder->getParent();
+	auto cylinder = getTopParent();
+	if (!cylinder) {
+		return nullptr;
 	}
-	return dynamic_cast<Tile*>(cylinder);
+
+	// get root cylinder
+	if (auto cylinderParent = cylinder->getParent()) {
+		return cylinderParent->getTile();
+	}
+	return cylinder->getTile();
 }
 
 const Tile* Item::getTile() const
 {
-	const Cylinder* cylinder = getTopParent();
-	// get root cylinder
-	if (cylinder && cylinder->getParent()) {
-		cylinder = cylinder->getParent();
+	auto cylinder = getTopParent();
+	if (!cylinder) {
+		return nullptr;
 	}
-	return dynamic_cast<const Tile*>(cylinder);
+
+	// get root cylinder
+	if (auto cylinderParent = cylinder->getParent()) {
+		return cylinderParent->getTile();
+	}
+	return cylinder->getTile();
 }
 
 uint16_t Item::getSubType() const
@@ -324,7 +332,14 @@ uint16_t Item::getSubType() const
 	return count;
 }
 
-const Player* Item::getHoldingPlayer() const { return dynamic_cast<const Player*>(getTopParent()); }
+const Player* Item::getHoldingPlayer() const
+{
+	auto cylinder = getTopParent();
+	if (!cylinder) {
+		return nullptr;
+	}
+	return cylinder->getPlayer();
+}
 
 void Item::setSubType(uint16_t n)
 {

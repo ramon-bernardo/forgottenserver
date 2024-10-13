@@ -190,6 +190,9 @@ public:
 	virtual void internalAddThing(uint32_t index, Thing* thing);
 
 	virtual void startDecaying();
+
+	Cylinder* getCylinder() override final { return this; }
+	const Cylinder* getCylinder() const override final { return this; }
 };
 
 class VirtualCylinder final : public Cylinder

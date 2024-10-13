@@ -5,9 +5,11 @@
 
 #include "storeinbox.h"
 
+#include "player.h"
+
 StoreInbox::StoreInbox(uint16_t type) : Container(type, 20, true, true) {}
 
-ReturnValue StoreInbox::queryAdd(int32_t, const Thing& thing, uint32_t, uint32_t flags, Creature*) const
+ReturnValue StoreInbox::queryAdd(int32_t, const Thing& thing, uint32_t, uint32_t flags, Creature* actor) const
 {
 	const Item* item = thing.getItem();
 	if (!item) {
@@ -23,12 +25,17 @@ ReturnValue StoreInbox::queryAdd(int32_t, const Thing& thing, uint32_t, uint32_t
 	}
 
 	if (!hasBitSet(FLAG_NOLIMIT, flags)) {
+		if (actor) {
+			if (auto player = actor->getPlayer(); player->isAccessPlayer()) {
+				return RETURNVALUE_NOERROR;
+			}
+		}
+
 		if (!item->isStoreItem()) {
 			return RETURNVALUE_CANNOTMOVEITEMISNOTSTOREITEM;
 		}
 
-		const Container* container = item->getContainer();
-		if (container && !container->empty()) {
+		if (auto container = item->getContainer(); !container->empty()) {
 			return RETURNVALUE_ITEMCANNOTBEMOVEDTHERE;
 		}
 	}

@@ -133,11 +133,11 @@ AccessHouseLevel_t House::getHouseAccessLevel(const Player* player) const
 
 bool House::kickPlayer(Player* player, Player* target)
 {
-	if (!target) {
+	if (!target || !target->getTile()) {
 		return false;
 	}
 
-	HouseTile* houseTile = dynamic_cast<HouseTile*>(target->getTile());
+	auto houseTile = target->getHouseTile();
 	if (!houseTile || houseTile->getHouse() != this) {
 		return false;
 	}

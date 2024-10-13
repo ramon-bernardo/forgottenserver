@@ -103,6 +103,12 @@ public:
 	Player* getPlayer() override { return this; }
 	const Player* getPlayer() const override { return this; }
 
+	Inbox* getInbox() override { return inbox; }
+	const Inbox* getInbox() const override { return inbox; }
+
+	StoreInbox* getStoreInbox() override { return storeInbox; }
+	const StoreInbox* getStoreInbox() const override { return storeInbox; }
+
 	void setID() final;
 
 	static MuteCountMap muteCountMap;
@@ -181,10 +187,6 @@ public:
 
 	void setLastWalkthroughAttempt(int64_t walkthroughAttempt) { lastWalkthroughAttempt = walkthroughAttempt; }
 	void setLastWalkthroughPosition(Position walkthroughPosition) { lastWalkthroughPosition = walkthroughPosition; }
-
-	Inbox* getInbox() const { return inbox; }
-
-	StoreInbox* getStoreInbox() const { return storeInbox; }
 
 	uint32_t getClientIcons() const;
 
@@ -357,7 +359,10 @@ public:
 	void removeConditionSuppressions(uint32_t conditions);
 
 	DepotChest* getDepotChest(uint32_t depotId, bool autoCreate);
-	DepotLocker& getDepotLocker();
+
+	DepotLocker* getDepotLocker() override;
+	const DepotLocker* getDepotLocker() const override;
+
 	void onReceiveMail() const;
 	bool isNearDepotBox() const;
 

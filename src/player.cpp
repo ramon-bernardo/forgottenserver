@@ -836,7 +836,7 @@ DepotChest* Player::getDepotChest(uint32_t depotId, bool autoCreate)
 	return it->second;
 }
 
-DepotLocker& Player::getDepotLocker()
+DepotLocker* Player::getDepotLocker()
 {
 	if (!depotLocker) {
 		depotLocker = std::make_shared<DepotLocker>(ITEM_LOCKER);
@@ -853,8 +853,10 @@ DepotLocker& Player::getDepotLocker()
 
 		depotLocker->internalAddThing(depotChest);
 	}
-	return *depotLocker;
+	return depotLocker.get();
 }
+
+const DepotLocker* Player::getDepotLocker() const { return depotLocker.get(); }
 
 void Player::sendCancelMessage(ReturnValue message) const { sendCancelMessage(getReturnMessage(message)); }
 
@@ -1494,15 +1496,21 @@ void Player::checkTradeState(const Item* item)
 
 	if (tradeItem == item) {
 		g_game.internalCloseTrade(this);
-	} else {
-		const Container* container = dynamic_cast<const Container*>(item->getParent());
-		while (container) {
-			if (container == tradeItem) {
+		return;
+	}
+
+	if (auto containerParent = item->getParent()) {
+		while (auto container = containerParent->getContainer()) {
+			if (tradeItem == container) {
 				g_game.internalCloseTrade(this);
 				break;
 			}
 
-			container = dynamic_cast<const Container*>(container->getParent());
+			if (auto containerParent = container->getParent()) {
+				container = containerParent->getContainer();
+			} else {
+				container = nullptr;
+			}
 		}
 	}
 }
@@ -2371,7 +2379,11 @@ void Player::autoCloseContainers(const Container* container)
 				break;
 			}
 
-			tmpContainer = dynamic_cast<Container*>(tmpContainer->getParent());
+			if (auto tmpContainerParent = container->getParent()) {
+				tmpContainer = tmpContainerParent->getContainer();
+			} else {
+				tmpContainer = nullptr;
+			}
 		}
 	}
 
@@ -2643,7 +2655,7 @@ ReturnValue Player::queryAdd(int32_t index, const Thing& thing, uint32_t count, 
 	if (inventoryItem && (!inventoryItem->isStackable() || inventoryItem->getID() != item->getID())) {
 		if (!getBoolean(ConfigManager::CLASSIC_EQUIPMENT_SLOTS)) {
 			const Cylinder* cylinder = item->getTopParent();
-			if (cylinder && (dynamic_cast<const DepotChest*>(cylinder) || dynamic_cast<const Player*>(cylinder))) {
+			if (cylinder && (cylinder->getDepotChest() || cylinder->getPlayer())) {
 				return RETURNVALUE_NEEDEXCHANGE;
 			}
 			return RETURNVALUE_NOTENOUGHROOM;
@@ -2871,11 +2883,12 @@ Cylinder* Player::queryDestination(int32_t& index, const Thing& thing, Item** de
 		*destItem = destThing->getItem();
 	}
 
-	Cylinder* subCylinder = dynamic_cast<Cylinder*>(destThing);
-	if (subCylinder) {
-		index = INDEX_WHEREEVER;
-		*destItem = nullptr;
-		return subCylinder;
+	if (destThing) {
+		if (auto subCylinder = destThing->getCylinder()) {
+			index = INDEX_WHEREEVER;
+			*destItem = nullptr;
+			return subCylinder;
+		}
 	}
 	return this;
 }
@@ -3210,49 +3223,68 @@ void Player::postRemoveNotification(Thing* thing, const Cylinder* newParent, int
 		sendItems();
 	}
 
-	if (const Item* item = thing->getItem()) {
-		if (item->isSupply()) {
-			if (const Player* player = item->getHoldingPlayer()) {
-				player->sendSupplyUsed(item->getClientID());
+	const auto item = thing->getItem();
+	if (!item) {
+		return;
+	}
+
+	if (item->isSupply()) {
+		if (const auto player = item->getHoldingPlayer()) {
+			player->sendSupplyUsed(item->getClientID());
+		}
+	}
+
+	if (shopOwner && requireListUpdate) {
+		updateSaleShopList(item);
+	}
+
+	const auto itemContainer = item->getContainer();
+	if (!itemContainer) {
+		return;
+	}
+
+	if (itemContainer->isRemoved()) {
+		autoCloseContainers(itemContainer);
+		return;
+	}
+
+	if (!getPosition().isInRange(itemContainer->getPosition(), 1, 1, 0)) {
+		autoCloseContainers(itemContainer);
+		return;
+	}
+
+	auto topParent = itemContainer->getTopParent();
+	if (!topParent) {
+		autoCloseContainers(itemContainer);
+		return;
+	}
+
+	if (topParent == this) {
+		onSendContainer(itemContainer);
+		return;
+	}
+
+	if (const auto depotContainer = topParent->getDepotChest()) {
+		bool isOwner = false;
+
+		for (const auto& it : depotChests) {
+			if (it.second == depotContainer) {
+				isOwner = true;
+				onSendContainer(itemContainer);
 			}
 		}
 
-		if (const Container* container = item->getContainer()) {
-			if (container->isRemoved() || !getPosition().isInRange(container->getPosition(), 1, 1, 0)) {
-				autoCloseContainers(container);
-			} else if (container->getTopParent() == this) {
-				onSendContainer(container);
-			} else if (const Container* topContainer = dynamic_cast<const Container*>(container->getTopParent())) {
-				if (const DepotChest* depotChest = dynamic_cast<const DepotChest*>(topContainer)) {
-					bool isOwner = false;
-
-					for (const auto& it : depotChests) {
-						if (it.second == depotChest) {
-							isOwner = true;
-							onSendContainer(container);
-						}
-					}
-
-					if (!isOwner) {
-						autoCloseContainers(container);
-					}
-				} else if (const Inbox* inboxContainer = dynamic_cast<const Inbox*>(topContainer)) {
-					if (inboxContainer == inbox) {
-						onSendContainer(container);
-					} else {
-						autoCloseContainers(container);
-					}
-				} else {
-					onSendContainer(container);
-				}
-			} else {
-				autoCloseContainers(container);
-			}
+		if (!isOwner) {
+			autoCloseContainers(itemContainer);
 		}
-
-		if (shopOwner && requireListUpdate) {
-			updateSaleShopList(item);
+	} else if (const Inbox* inboxContainer = topParent->getInbox()) {
+		if (inboxContainer == inbox) {
+			onSendContainer(itemContainer);
+		} else {
+			autoCloseContainers(itemContainer);
 		}
+	} else {
+		onSendContainer(itemContainer);
 	}
 }
 

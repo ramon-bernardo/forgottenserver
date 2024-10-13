@@ -500,22 +500,11 @@ public:
 
 	bool equals(const Item* otherItem) const;
 
+	Tile* getTile() override;
+	const Tile* getTile() const override;
+
 	Item* getItem() override final { return this; }
 	const Item* getItem() const override final { return this; }
-	virtual Teleport* getTeleport() { return nullptr; }
-	virtual const Teleport* getTeleport() const { return nullptr; }
-	virtual TrashHolder* getTrashHolder() { return nullptr; }
-	virtual const TrashHolder* getTrashHolder() const { return nullptr; }
-	virtual Mailbox* getMailbox() { return nullptr; }
-	virtual const Mailbox* getMailbox() const { return nullptr; }
-	virtual Door* getDoor() { return nullptr; }
-	virtual const Door* getDoor() const { return nullptr; }
-	virtual MagicField* getMagicField() { return nullptr; }
-	virtual const MagicField* getMagicField() const { return nullptr; }
-	virtual BedItem* getBed() { return nullptr; }
-	virtual const BedItem* getBed() const { return nullptr; }
-	virtual Podium* getPodium() { return nullptr; }
-	virtual const Podium* getPodium() const { return nullptr; }
 
 	const std::string& getStrAttr(itemAttrTypes type) const
 	{
@@ -917,8 +906,6 @@ public:
 	void setParent(Cylinder* cylinder) override { parent = cylinder; }
 	Cylinder* getTopParent();
 	const Cylinder* getTopParent() const;
-	Tile* getTile() override;
-	const Tile* getTile() const override;
 	bool isRemoved() const override { return !parent || parent->isRemoved(); }
 
 protected:

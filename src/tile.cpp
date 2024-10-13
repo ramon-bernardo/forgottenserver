@@ -378,7 +378,7 @@ void Tile::onAddTileItem(Item* item)
 
 	if ((!hasFlag(TILESTATE_PROTECTIONZONE) || getBoolean(ConfigManager::CLEAN_PROTECTION_ZONES)) &&
 	    item->isCleanable()) {
-		if (!dynamic_cast<HouseTile*>(this)) {
+		if (!this->getHouseTile()) {
 			g_game.addTileToClean(this);
 		}
 	}

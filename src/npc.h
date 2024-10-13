@@ -151,14 +151,15 @@ inline constexpr int32_t EVENT_ID_LOADING = 1;
 class Npc final : public Creature
 {
 public:
+	static Npc* createNpc(const std::string& name);
 	explicit Npc(const std::string& name);
 	~Npc();
+
+	using Creature::onWalk;
 
 	// non-copyable
 	Npc(const Npc&) = delete;
 	Npc& operator=(const Npc&) = delete;
-
-	using Creature::onWalk;
 
 	Npc* getNpc() override { return this; }
 	const Npc* getNpc() const override { return this; }
@@ -174,8 +175,6 @@ public:
 
 	void removeList() override;
 	void addList() override;
-
-	static Npc* createNpc(const std::string& name);
 
 	bool canSee(const Position& pos) const override;
 

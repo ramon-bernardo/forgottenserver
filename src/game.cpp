@@ -312,24 +312,25 @@ void Game::internalGetPosition(Item* item, Position& pos, uint8_t& stackpos)
 	pos.z = 0;
 	stackpos = 0;
 
-	Cylinder* topParent = item->getTopParent();
-	if (topParent) {
-		if (Player* player = dynamic_cast<Player*>(topParent)) {
-			pos.x = 0xFFFF;
+	auto topParent = item->getTopParent();
+	if (!topParent) {
+		return;
+	}
 
-			Container* container = dynamic_cast<Container*>(item->getParent());
-			if (container) {
-				pos.y = static_cast<uint16_t>(0x40) | static_cast<uint16_t>(player->getContainerID(container));
-				pos.z = container->getThingIndex(item);
-				stackpos = pos.z;
-			} else {
-				pos.y = player->getThingIndex(item);
-				stackpos = pos.y;
-			}
-		} else if (Tile* tile = topParent->getTile()) {
-			pos = tile->getPosition();
-			stackpos = tile->getThingIndex(item);
+	if (auto player = topParent->getPlayer()) {
+		pos.x = 0xFFFF;
+
+		if (auto container = item->getParent()->getContainer()) {
+			pos.y = static_cast<uint16_t>(0x40) | static_cast<uint16_t>(player->getContainerID(container));
+			pos.z = container->getThingIndex(item);
+			stackpos = pos.z;
+		} else {
+			pos.y = player->getThingIndex(item);
+			stackpos = pos.y;
 		}
+	} else if (Tile* tile = topParent->getTile()) {
+		pos = tile->getPosition();
+		stackpos = tile->getThingIndex(item);
 	}
 }
 
@@ -2341,11 +2342,11 @@ void Game::playerMoveUpContainer(uint32_t playerId, uint8_t cid)
 	}
 
 	Container* container = player->getContainerByID(cid);
-	if (!container) {
+	if (!container || !container->getRealParent()) {
 		return;
 	}
 
-	Container* parentContainer = dynamic_cast<Container*>(container->getRealParent());
+	auto parentContainer = container->getRealParent()->getContainer();
 	if (!parentContainer) {
 		Tile* tile = container->getTile();
 		if (!tile) {
@@ -2449,12 +2450,11 @@ void Game::playerWriteItem(uint32_t playerId, uint32_t windowTextId, std::string
 		return;
 	}
 
-	Cylinder* topParent = writeItem->getTopParent();
-
-	Player* owner = dynamic_cast<Player*>(topParent);
-	if (owner && owner != player) {
-		player->sendCancelMessage(RETURNVALUE_NOTPOSSIBLE);
-		return;
+	if (auto topParent = writeItem->getTopParent()) {
+		if (auto owner = topParent->getPlayer(); owner != player) {
+			player->sendCancelMessage(RETURNVALUE_NOTPOSSIBLE);
+			return;
+		}
 	}
 
 	if (!writeItem->getPosition().isInRange(player->getPosition(), 1, 1, 0)) {
@@ -2664,7 +2664,7 @@ void Game::playerRequestTrade(uint32_t playerId, const Position& pos, uint8_t st
 	}
 
 	if (getBoolean(ConfigManager::ONLY_INVITED_CAN_MOVE_HOUSE_ITEMS)) {
-		if (const HouseTile* const houseTile = dynamic_cast<const HouseTile*>(tradeItem->getTile())) {
+		if (const HouseTile* const houseTile = tradeItem->getHouseTile()) {
 			if (!tradeItem->getTopParent()->getCreature() && !houseTile->getHouse()->isInvited(player)) {
 				player->sendCancelMessage(RETURNVALUE_PLAYERISNOTINVITED);
 				return;
@@ -5233,7 +5233,7 @@ void Game::playerCreateMarketOffer(uint32_t playerId, uint8_t type, uint16_t spr
 			return;
 		}
 
-		const auto& itemList = getMarketItemList(it.wareId, amount, *player);
+		const auto& itemList = getMarketItemList(it.wareId, amount, player);
 		if (itemList.empty()) {
 			return;
 		}
@@ -5380,7 +5380,7 @@ void Game::playerAcceptMarketOffer(uint32_t playerId, uint32_t timestamp, uint16
 	uint64_t totalPrice = offer.price * amount;
 
 	if (offer.type == MARKETACTION_BUY) {
-		const auto& itemList = getMarketItemList(it.wareId, amount, *player);
+		const auto& itemList = getMarketItemList(it.wareId, amount, player);
 		if (itemList.empty()) {
 			return;
 		}
@@ -5543,12 +5543,12 @@ void Game::parsePlayerNetworkMessage(uint32_t playerId, uint8_t recvByte, Networ
 	g_events->eventPlayerOnNetworkMessage(player, recvByte, msg);
 }
 
-std::vector<Item*> Game::getMarketItemList(uint16_t wareId, uint16_t sufficientCount, const Player& player)
+std::vector<Item*> Game::getMarketItemList(uint16_t wareId, uint16_t sufficientCount, Player* player)
 {
 	uint16_t count = 0;
-	std::list<Container*> containers{player.getInbox()};
+	std::list<Container*> containers{player->getInbox()};
 
-	for (const auto& chest : player.depotChests) {
+	for (const auto& chest : player->depotChests) {
 		if (!chest.second->empty()) {
 			containers.push_front(chest.second);
 		}
