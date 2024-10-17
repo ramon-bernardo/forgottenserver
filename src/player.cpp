@@ -3360,7 +3360,18 @@ void Player::goToFollowCreature()
 			return;
 		}
 
-		Creature::goToFollowCreature();
+		if (followCreature) {
+			FindPathParams fpp;
+			getPathSearchParams(followCreature, fpp);
+
+			listWalkDir.clear();
+			if (getPathTo(followCreature->getPosition(), listWalkDir, fpp)) {
+				hasFollowPath = true;
+				startAutoWalk();
+			} else {
+				hasFollowPath = false;
+			}
+		}
 
 		if (followCreature && !hasFollowPath) {
 			lastFailedFollow = OTSYS_TIME();

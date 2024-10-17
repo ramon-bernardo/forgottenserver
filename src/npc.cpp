@@ -729,6 +729,22 @@ void Npc::addShopPlayer(Player* player) { shopPlayerSet.insert(player); }
 
 void Npc::removeShopPlayer(Player* player) { shopPlayerSet.erase(player); }
 
+void Npc::goToFollowCreature()
+{
+	if (followCreature) {
+		FindPathParams fpp;
+		getPathSearchParams(followCreature, fpp);
+
+		listWalkDir.clear();
+		if (getPathTo(followCreature->getPosition(), listWalkDir, fpp)) {
+			hasFollowPath = true;
+			startAutoWalk();
+		} else {
+			hasFollowPath = false;
+		}
+	}
+}
+
 void Npc::closeAllShopWindows()
 {
 	while (!shopPlayerSet.empty()) {

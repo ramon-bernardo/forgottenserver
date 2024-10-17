@@ -230,6 +230,8 @@ public:
 	void removeShopPlayer(Player* player);
 	std::map<std::string, std::string> parameters;
 
+	void goToFollowCreature() override;
+
 private:
 	void onCreatureAppear(Creature* creature, bool isLogin) override;
 	void onRemoveCreature(Creature* creature, bool isLogout) override;

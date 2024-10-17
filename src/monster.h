@@ -98,7 +98,6 @@ public:
 	void onWalk() override;
 	void onWalkComplete() override;
 	bool getNextStep(Direction& direction, uint32_t& flags) override;
-	void onFollowCreatureComplete(const Creature* creature) override;
 
 	void onThink(uint32_t interval) override;
 
@@ -132,6 +131,8 @@ public:
 	// monster icons
 	MonsterIconHashMap& getSpecialIcons() { return monsterIcons; }
 	const MonsterIconHashMap& getSpecialIcons() const { return monsterIcons; }
+
+	void goToFollowCreature() override;
 
 	static uint32_t monsterAutoID;
 

@@ -576,25 +576,6 @@ bool Monster::searchTarget(TargetSearchType_t searchType /*= TARGETSEARCH_DEFAUL
 	return false;
 }
 
-void Monster::onFollowCreatureComplete(const Creature* creature)
-{
-	if (creature) {
-		auto it = std::find(targetList.begin(), targetList.end(), creature);
-		if (it != targetList.end()) {
-			Creature* target = (*it);
-			targetList.erase(it);
-
-			if (hasFollowPath) {
-				targetList.push_front(target);
-			} else if (!isSummon()) {
-				targetList.push_back(target);
-			} else {
-				target->decrementReferenceCounter();
-			}
-		}
-	}
-}
-
 BlockType_t Monster::blockHit(Creature* attacker, CombatType_t combatType, int32_t& damage,
                               bool checkDefense /* = false*/, bool checkArmor /* = false*/, bool /* field = false */,
                               bool /* ignoreResistances = false */)
@@ -618,6 +599,64 @@ BlockType_t Monster::blockHit(Creature* attacker, CombatType_t combatType, int32
 	}
 
 	return blockType;
+}
+
+void Monster::goToFollowCreature()
+{
+	if (followCreature) {
+		FindPathParams fpp;
+		getPathSearchParams(followCreature, fpp);
+
+		if (!getMaster() && (isFleeing() || fpp.maxTargetDist > 1)) {
+			Direction dir = DIRECTION_NONE;
+
+			if (isFleeing()) {
+				getDistanceStep(followCreature->getPosition(), dir, true);
+			} else { // maxTargetDist > 1
+				if (!getDistanceStep(followCreature->getPosition(), dir)) {
+					// if we can't get anything then let the A* calculate
+					listWalkDir.clear();
+					if (getPathTo(followCreature->getPosition(), listWalkDir, fpp)) {
+						hasFollowPath = true;
+						startAutoWalk();
+					} else {
+						hasFollowPath = false;
+					}
+					return;
+				}
+			}
+
+			if (dir != DIRECTION_NONE) {
+				listWalkDir.clear();
+				listWalkDir.push_back(dir);
+
+				hasFollowPath = true;
+				startAutoWalk();
+			}
+		} else {
+			listWalkDir.clear();
+			if (getPathTo(followCreature->getPosition(), listWalkDir, fpp)) {
+				hasFollowPath = true;
+				startAutoWalk();
+			} else {
+				hasFollowPath = false;
+			}
+		}
+
+		auto it = std::find(targetList.begin(), targetList.end(), followCreature);
+		if (it != targetList.end()) {
+			Creature* target = (*it);
+			targetList.erase(it);
+
+			if (hasFollowPath) {
+				targetList.push_front(target);
+			} else if (!isSummon()) {
+				targetList.push_back(target);
+			} else {
+				target->decrementReferenceCounter();
+			}
+		}
+	}
 }
 
 bool Monster::isTarget(const Creature* creature) const
