@@ -426,18 +426,21 @@ void Creature::onRemoveTileItem(const Tile* tile, const Position& pos, const Ite
 	}
 }
 
+void Creature::onAppear(bool isLogin)
+{
+	if (useCacheMap()) {
+		isMapLoaded = true;
+		updateMapCache();
+	}
+
+	if (isLogin) {
+		setLastPosition(getPosition());
+	}
+}
+
 void Creature::onCreatureAppear(Creature* creature, bool isLogin)
 {
-	if (creature == this) {
-		if (useCacheMap()) {
-			isMapLoaded = true;
-			updateMapCache();
-		}
-
-		if (isLogin) {
-			setLastPosition(getPosition());
-		}
-	} else if (isMapLoaded) {
+	if (isMapLoaded) {
 		if (creature->getPosition().z == getPosition().z) {
 			updateTileCache(creature->getTile(), creature->getPosition());
 		}
@@ -447,7 +450,8 @@ void Creature::onCreatureAppear(Creature* creature, bool isLogin)
 void Creature::onRemoveCreature(Creature* creature, bool)
 {
 	onCreatureDisappear(creature, true);
-	if (creature != this && isMapLoaded) {
+
+	if (isMapLoaded) {
 		if (creature->getPosition().z == getPosition().z) {
 			updateTileCache(creature->getTile(), creature->getPosition());
 		}

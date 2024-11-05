@@ -109,6 +109,38 @@ bool Monster::canWalkOnFieldType(CombatType_t combatType) const
 
 void Monster::onAttackedCreatureDisappear(bool) { attackTicks = 0; }
 
+void Monster::onAppear(bool isLogin)
+{
+	Creature::onAppear(isLogin);
+
+	if (mType->info.creatureAppearEvent != -1) {
+		// onCreatureAppear(self, creature)
+		LuaScriptInterface* scriptInterface = mType->info.scriptInterface;
+		if (!tfs::lua::reserveScriptEnv()) {
+			std::cout << "[Error - Monster::onCreatureAppear] Call stack overflow" << std::endl;
+			return;
+		}
+
+		ScriptEnvironment* env = tfs::lua::getScriptEnv();
+		env->setScriptId(mType->info.creatureAppearEvent, scriptInterface);
+
+		lua_State* L = scriptInterface->getLuaState();
+		scriptInterface->pushFunction(mType->info.creatureAppearEvent);
+
+		tfs::lua::pushUserdata(L, this);
+		tfs::lua::setMetatable(L, -1, "Monster");
+
+		tfs::lua::pushUserdata(L, this);
+		tfs::lua::setCreatureMetatable(L, -1, this);
+
+		if (scriptInterface->callFunction(2)) {
+			return;
+		}
+	}
+
+	onCreatureEnter(this);
+}
+
 void Monster::onCreatureAppear(Creature* creature, bool isLogin)
 {
 	Creature::onCreatureAppear(creature, isLogin);
@@ -138,17 +170,43 @@ void Monster::onCreatureAppear(Creature* creature, bool isLogin)
 		}
 	}
 
-	if (creature == this) {
-		// We just spawned lets look around to see who is there.
-		if (isSummon()) {
-			isMasterInRange = canSee(getMaster()->getPosition());
+	onCreatureEnter(creature);
+}
+
+void Monster::onRemove(bool isLogout)
+{
+	Creature::onRemove(isLogout);
+
+	if (mType->info.creatureDisappearEvent != -1) {
+		// onCreatureDisappear(self, creature)
+		LuaScriptInterface* scriptInterface = mType->info.scriptInterface;
+		if (!tfs::lua::reserveScriptEnv()) {
+			std::cout << "[Error - Monster::onCreatureDisappear] Call stack overflow" << std::endl;
+			return;
 		}
 
-		updateTargetList();
-		updateIdleStatus();
-	} else {
-		onCreatureEnter(creature);
+		ScriptEnvironment* env = tfs::lua::getScriptEnv();
+		env->setScriptId(mType->info.creatureDisappearEvent, scriptInterface);
+
+		lua_State* L = scriptInterface->getLuaState();
+		scriptInterface->pushFunction(mType->info.creatureDisappearEvent);
+
+		tfs::lua::pushUserdata(L, this);
+		tfs::lua::setMetatable(L, -1, "Monster");
+
+		tfs::lua::pushUserdata(L, this);
+		tfs::lua::setCreatureMetatable(L, -1, this);
+
+		if (scriptInterface->callFunction(2)) {
+			return;
+		}
 	}
+
+	if (spawn) {
+		spawn->startSpawnCheck();
+	}
+
+	setIdle(true);
 }
 
 void Monster::onRemoveCreature(Creature* creature, bool isLogout)
@@ -180,15 +238,7 @@ void Monster::onRemoveCreature(Creature* creature, bool isLogout)
 		}
 	}
 
-	if (creature == this) {
-		if (spawn) {
-			spawn->startSpawnCheck();
-		}
-
-		setIdle(true);
-	} else {
-		onCreatureLeave(creature);
-	}
+	onCreatureLeave(creature);
 }
 
 void Monster::onCreatureMove(Creature* creature, const Tile* newTile, const Position& newPos, const Tile* oldTile,

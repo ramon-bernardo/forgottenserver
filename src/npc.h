@@ -231,7 +231,9 @@ public:
 	std::map<std::string, std::string> parameters;
 
 private:
+	void onAppear(bool isLogin) override;
 	void onCreatureAppear(Creature* creature, bool isLogin) override;
+	void onRemove(bool isLogout) override;
 	void onRemoveCreature(Creature* creature, bool isLogout) override;
 	void onCreatureMove(Creature* creature, const Tile* newTile, const Position& newPos, const Tile* oldTile,
 	                    const Position& oldPos, bool teleport) override;

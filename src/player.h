@@ -772,8 +772,8 @@ public:
 	                      const Item* newItem, const ItemType& newType) override;
 	void onRemoveTileItem(const Tile* tile, const Position& pos, const ItemType& iType, const Item* item) override;
 
-	void onCreatureAppear(Creature* creature, bool isLogin) override;
-	void onRemoveCreature(Creature* creature, bool isLogout) override;
+	void onAppear(bool isLogin) override;
+	void onRemove(bool isLogout) override;
 	void onCreatureMove(Creature* creature, const Tile* newTile, const Position& newPos, const Tile* oldTile,
 	                    const Position& oldPos, bool teleport) override;
 

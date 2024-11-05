@@ -1112,63 +1112,65 @@ void Player::onRemoveTileItem(const Tile* tile, const Position& pos, const ItemT
 	}
 }
 
-void Player::onCreatureAppear(Creature* creature, bool isLogin)
+void Player::onAppear(bool isLogin)
 {
-	Creature::onCreatureAppear(creature, isLogin);
+	Creature::onAppear(isLogin);
 
-	if (isLogin && creature == this) {
-		sendItems();
-		onEquipInventory();
-
-		for (Condition* condition : storedConditionList) {
-			addCondition(condition);
-		}
-		storedConditionList.clear();
-
-		updateRegeneration();
-
-		BedItem* bed = g_game.getBedBySleeper(guid);
-		if (bed) {
-			bed->wakeUp(this);
-		}
-
-		// load mount speed bonus
-		uint16_t currentMountId = currentOutfit.lookMount;
-		if (currentMountId != 0) {
-			Mount* currentMount = g_game.mounts.getMountByClientID(currentMountId);
-			if (currentMount && hasMount(currentMount)) {
-				g_game.changeSpeed(this, currentMount->speed);
-			} else {
-				defaultOutfit.lookMount = 0;
-				g_game.internalCreatureChangeOutfit(this, defaultOutfit);
-			}
-		}
-
-		// mounted player moved to pz on login, update mount status
-		onChangeZone(getZone());
-
-		if (guild) {
-			guild->addMember(this);
-		}
-
-		int32_t offlineTime;
-		if (getLastLogout() != 0) {
-			// Not counting more than 21 days to prevent overflow when multiplying with 1000 (for milliseconds).
-			offlineTime = std::min<int32_t>(time(nullptr) - getLastLogout(), 86400 * 21);
-		} else {
-			offlineTime = 0;
-		}
-
-		for (Condition* condition : getMuteConditions()) {
-			condition->setTicks(condition->getTicks() - (offlineTime * 1000));
-			if (condition->getTicks() <= 0) {
-				removeCondition(condition);
-			}
-		}
-
-		g_game.checkPlayersRecord();
-		IOLoginData::updateOnlineStatus(guid, true);
+	if (!isLogin) {
+		return;
 	}
+
+	sendItems();
+	onEquipInventory();
+
+	for (Condition* condition : storedConditionList) {
+		addCondition(condition);
+	}
+	storedConditionList.clear();
+
+	updateRegeneration();
+
+	BedItem* bed = g_game.getBedBySleeper(guid);
+	if (bed) {
+		bed->wakeUp(this);
+	}
+
+	// load mount speed bonus
+	uint16_t currentMountId = currentOutfit.lookMount;
+	if (currentMountId != 0) {
+		Mount* currentMount = g_game.mounts.getMountByClientID(currentMountId);
+		if (currentMount && hasMount(currentMount)) {
+			g_game.changeSpeed(this, currentMount->speed);
+		} else {
+			defaultOutfit.lookMount = 0;
+			g_game.internalCreatureChangeOutfit(this, defaultOutfit);
+		}
+	}
+
+	// mounted player moved to pz on login, update mount status
+	onChangeZone(getZone());
+
+	if (guild) {
+		guild->addMember(this);
+	}
+
+	int32_t offlineTime;
+	if (getLastLogout() != 0) {
+		// Not counting more than 21 days to prevent overflow when multiplying with 1000 (for milliseconds).
+		offlineTime = std::min<int32_t>(time(nullptr) - getLastLogout(), 86400 * 21);
+	} else {
+		offlineTime = 0;
+	}
+
+	for (Condition* condition : getMuteConditions()) {
+		condition->setTicks(condition->getTicks() - (offlineTime * 1000));
+		if (condition->getTicks() <= 0) {
+			removeCondition(condition);
+		}
+	}
+
+	g_game.checkPlayersRecord();
+	IOLoginData::updateOnlineStatus(guid, true);
 }
 
 void Player::onAttackedCreatureDisappear(bool isLogout)
@@ -1238,54 +1240,52 @@ void Player::onAttackedCreatureChangeZone(ZoneType_t zone)
 	}
 }
 
-void Player::onRemoveCreature(Creature* creature, bool isLogout)
+void Player::onRemove(bool isLogout)
 {
-	Creature::onRemoveCreature(creature, isLogout);
+	Creature::onRemove(isLogout);
 
-	if (creature == this) {
-		onDeEquipInventory();
+	onDeEquipInventory();
 
-		if (isLogout) {
-			loginPosition = getPosition();
+	if (isLogout) {
+		loginPosition = getPosition();
+	}
+
+	lastLogout = time(nullptr);
+
+	if (eventWalk != 0) {
+		setFollowCreature(nullptr);
+	}
+
+	if (tradePartner) {
+		g_game.internalCloseTrade(this);
+	}
+
+	closeShopWindow();
+
+	clearPartyInvitations();
+
+	if (party) {
+		party->leaveParty(this, true);
+	}
+
+	g_chat->removeUserFromAllChannels(*this);
+
+	if (guild) {
+		guild->removeMember(this);
+	}
+
+	IOLoginData::updateOnlineStatus(guid, false);
+
+	bool saved = false;
+	for (uint32_t tries = 0; tries < 3; ++tries) {
+		if (IOLoginData::savePlayer(this)) {
+			saved = true;
+			break;
 		}
+	}
 
-		lastLogout = time(nullptr);
-
-		if (eventWalk != 0) {
-			setFollowCreature(nullptr);
-		}
-
-		if (tradePartner) {
-			g_game.internalCloseTrade(this);
-		}
-
-		closeShopWindow();
-
-		clearPartyInvitations();
-
-		if (party) {
-			party->leaveParty(this, true);
-		}
-
-		g_chat->removeUserFromAllChannels(*this);
-
-		if (guild) {
-			guild->removeMember(this);
-		}
-
-		IOLoginData::updateOnlineStatus(guid, false);
-
-		bool saved = false;
-		for (uint32_t tries = 0; tries < 3; ++tries) {
-			if (IOLoginData::savePlayer(this)) {
-				saved = true;
-				break;
-			}
-		}
-
-		if (!saved) {
-			std::cout << "Error while saving player: " << getName() << std::endl;
-		}
+	if (!saved) {
+		std::cout << "Error while saving player: " << getName() << std::endl;
 	}
 }
 

@@ -287,8 +287,11 @@ public:
 	                              const Item* newItem, const ItemType& newType);
 	virtual void onRemoveTileItem(const Tile* tile, const Position& pos, const ItemType& iType, const Item* item);
 
+	virtual void onAppear(bool isLogin);
 	virtual void onCreatureAppear(Creature* creature, bool isLogin);
+	virtual void onRemove(bool isLogout) {}
 	virtual void onRemoveCreature(Creature* creature, bool isLogout);
+
 	virtual void onCreatureMove(Creature* creature, const Tile* newTile, const Position& newPos, const Tile* oldTile,
 	                            const Position& oldPos, bool teleport);
 

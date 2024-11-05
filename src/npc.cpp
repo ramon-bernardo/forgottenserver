@@ -410,24 +410,31 @@ void Npc::loadNpcTypeInfo()
 	sightY = npcType->sightY;
 }
 
+void Npc::onAppear(bool isLogin)
+{
+	Creature::onAppear(isLogin);
+
+	if (walkTicks > 0) {
+		addEventWalk();
+	}
+
+	if (npcEventHandler) {
+		npcEventHandler->onCreatureAppear(this);
+	}
+}
+
 void Npc::onCreatureAppear(Creature* creature, bool isLogin)
 {
 	Creature::onCreatureAppear(creature, isLogin);
 
-	if (creature == this) {
-		if (walkTicks > 0) {
-			addEventWalk();
-		}
-
-		if (npcEventHandler) {
-			npcEventHandler->onCreatureAppear(creature);
-		}
-	} else if (creature->getPlayer()) {
+	if (creature->getPlayer()) {
 		if (npcEventHandler) {
 			npcEventHandler->onCreatureAppear(creature);
 		}
 	}
 }
+
+void Npc::onCreatureAppear(Creature* creature, bool isLogin) {}
 
 bool NpcType::loadCallback(NpcScriptInterface* scriptInterface)
 {
@@ -459,16 +466,22 @@ bool NpcType::loadCallback(NpcScriptInterface* scriptInterface)
 	return true;
 }
 
+void Npc::onRemove(bool isLogout)
+{
+	Creature::onRemove(isLogout);
+
+	closeAllShopWindows();
+
+	if (npcEventHandler) {
+		npcEventHandler->onCreatureDisappear(this);
+	}
+}
+
 void Npc::onRemoveCreature(Creature* creature, bool isLogout)
 {
 	Creature::onRemoveCreature(creature, isLogout);
 
-	if (creature == this) {
-		closeAllShopWindows();
-		if (npcEventHandler) {
-			npcEventHandler->onCreatureDisappear(creature);
-		}
-	} else if (creature->getPlayer()) {
+	if (creature->getPlayer()) {
 		if (npcEventHandler) {
 			npcEventHandler->onCreatureDisappear(creature);
 		}

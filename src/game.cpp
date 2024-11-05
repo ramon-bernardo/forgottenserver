@@ -525,7 +525,11 @@ bool Game::placeCreature(Creature* creature, const Position& pos, bool extendedP
 	}
 
 	for (Creature* spectator : spectators) {
-		spectator->onCreatureAppear(creature, true);
+		if (spectator == creature) {
+			spectator->onAppear(true);
+		} else {
+			spectator->onCreatureAppear(creature, true);
+		}
 	}
 
 	creature->getParent()->postAddNotification(creature, nullptr, 0);
@@ -568,7 +572,11 @@ bool Game::removeCreature(Creature* creature, bool isLogout /* = true*/)
 
 	// event method
 	for (Creature* spectator : spectators) {
-		spectator->onRemoveCreature(creature, isLogout);
+		if (spectator == creature) {
+			spectator->onRemove(isLogout);
+		} else {
+			spectator->onRemoveCreature(creature, isLogout);
+		}
 	}
 
 	Creature* master = creature->getMaster();
