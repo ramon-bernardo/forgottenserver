@@ -1048,6 +1048,7 @@ MoveEvent = {}
 ---@field time fun(self:GlobalEvent, time:string):boolean -- "hh:mm:ss"
 ---@field interval fun(self:GlobalEvent, interval:integer):boolean
 ---@field onStartup fun():boolean
+---@field onReload fun():boolean
 ---@field onShutdown fun():boolean
 ---@field onRecord fun(current:integer, old:integer):boolean
 ---@field onThink fun(interval:integer):boolean

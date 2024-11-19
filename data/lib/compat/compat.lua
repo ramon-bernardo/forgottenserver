@@ -292,6 +292,10 @@ do
 			self:type("startup")
 			self:onStartup(value)
 			return
+		elseif key == "onReload" then
+			self:type("reload")
+			self:onReload(value)
+			return
 		elseif key == "onShutdown" then
 			self:type("shutdown")
 			self:onShutdown(value)

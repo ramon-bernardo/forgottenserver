@@ -216,17 +216,17 @@ local function configureRaidEvent(node)
 	return raid
 end
 
-local event = GlobalEvent("load raids.xml")
-
-function event.onStartup()
+local function loadXMLRaids()
 	local doc = XMLDocument("data/raids/raids.xml")
 	if not doc then
-		return true
+		io.write("[Warning - GlobalEvent::loadXMLActions] Could not load data/raids/raids.xml.\n")
+		return
 	end
 
 	local raids = doc:child("raids")
 
 	io.write(">> Loading legacy XML raids from data/raids/raids.xml...\n")
+
 	local loaded, start = 0, os.mtime()
 	for node in raids:children() do
 		local enabled = node:attribute("enabled")
@@ -238,7 +238,26 @@ function event.onStartup()
 			end
 		end
 	end
+
 	io.write(">> Loaded " .. loaded .. " raids in " .. os.mtime() - start .. "ms.\n")
 end
 
-event:register()
+do
+	local event = GlobalEvent("load raids.xml")
+
+	function event.onStartup()
+		loadXMLRaids()
+	end
+	
+	event:register()
+end
+
+do
+	local event = GlobalEvent("reload raids.xml")
+
+	function event.onReload()
+		loadXMLRaids()
+	end
+	
+	event:register()
+end

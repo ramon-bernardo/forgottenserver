@@ -109,9 +109,10 @@ bool GlobalEvents::registerLuaEvent(GlobalEvent* event)
 	return false;
 }
 
-void GlobalEvents::startup() const { execute(GLOBALEVENT_STARTUP); }
-void GlobalEvents::shutdown() const { execute(GLOBALEVENT_SHUTDOWN); }
-void GlobalEvents::save() const { execute(GLOBALEVENT_SAVE); }
+void GlobalEvents::onStartup() const { execute(GLOBALEVENT_STARTUP); }
+void GlobalEvents::onReload() const { execute(GLOBALEVENT_RELOAD); }
+void GlobalEvents::onShutdown() const { execute(GLOBALEVENT_SHUTDOWN); }
+void GlobalEvents::onSave() const { execute(GLOBALEVENT_SAVE); }
 
 void GlobalEvents::timer()
 {
@@ -207,6 +208,7 @@ GlobalEventMap GlobalEvents::getEventMap(GlobalEvent_t type)
 		case GLOBALEVENT_TIMER:
 			return timerMap;
 		case GLOBALEVENT_STARTUP:
+		case GLOBALEVENT_RELOAD:
 		case GLOBALEVENT_SHUTDOWN:
 		case GLOBALEVENT_RECORD:
 		case GLOBALEVENT_SAVE: {
@@ -313,6 +315,8 @@ std::string_view GlobalEvent::getScriptEventName() const
 	switch (eventType) {
 		case GLOBALEVENT_STARTUP:
 			return "onStartup";
+		case GLOBALEVENT_RELOAD:
+			return "onReload";
 		case GLOBALEVENT_SHUTDOWN:
 			return "onShutdown";
 		case GLOBALEVENT_RECORD:

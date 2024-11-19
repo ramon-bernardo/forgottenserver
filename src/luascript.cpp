@@ -3538,6 +3538,7 @@ void LuaScriptInterface::registerFunctions()
 	registerMethod(L, "GlobalEvent", "onThink", LuaScriptInterface::luaGlobalEventOnCallback);
 	registerMethod(L, "GlobalEvent", "onTime", LuaScriptInterface::luaGlobalEventOnCallback);
 	registerMethod(L, "GlobalEvent", "onStartup", LuaScriptInterface::luaGlobalEventOnCallback);
+	registerMethod(L, "GlobalEvent", "onReload", LuaScriptInterface::luaGlobalEventOnCallback);
 	registerMethod(L, "GlobalEvent", "onShutdown", LuaScriptInterface::luaGlobalEventOnCallback);
 	registerMethod(L, "GlobalEvent", "onRecord", LuaScriptInterface::luaGlobalEventOnCallback);
 	registerMethod(L, "GlobalEvent", "onSave", LuaScriptInterface::luaGlobalEventOnCallback);
@@ -4078,7 +4079,7 @@ int LuaScriptInterface::luaStopEvent(lua_State* L)
 
 int LuaScriptInterface::luaSaveServer(lua_State* L)
 {
-	g_globalEvents->save();
+	g_globalEvents->onSave();
 	g_game.saveGameState();
 	tfs::lua::pushBoolean(L, true);
 	return 1;
@@ -18183,6 +18184,8 @@ int LuaScriptInterface::luaGlobalEventType(lua_State* L)
 		std::string tmpStr = boost::algorithm::to_lower_copy(typeName);
 		if (tmpStr == "startup") {
 			global->setEventType(GLOBALEVENT_STARTUP);
+		} else if (tmpStr == "reload") {
+			global->setEventType(GLOBALEVENT_RELOAD);
 		} else if (tmpStr == "shutdown") {
 			global->setEventType(GLOBALEVENT_SHUTDOWN);
 		} else if (tmpStr == "record") {
